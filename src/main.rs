@@ -175,10 +175,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fnmatch() {
+    fn test_fnmatch_no_special() {
+        assert_eq!(fnmatch("fooba", "foobar"), None);
         assert_eq!(fnmatch("foobar", "foobar"), Some(vec![]));
-        assert_eq!(fnmatch("foo?ar", "foobar"), Some(vec![String::from("b")]));
+        assert_eq!(fnmatch("foobar!", "foobar"), None);
+    }
+
+    #[test]
+    fn test_fnmatch_question_mark() {
+        assert_eq!(
+            fnmatch("?oobar", "foobar"),
+            Some(vec![String::from("f")])
+        );
+        assert_eq!(
+            fnmatch("?oo?ar", "foobar"),
+            Some(vec![String::from("f"), String::from("b")])
+        );
+        assert_eq!(
+            fnmatch("foob??", "foobar"),
+            Some(vec![String::from("a"), String::from("r")])
+        );
+        assert_eq!(
+            fnmatch("fooba??", "foobar"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_fnmatch_star() {
         assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
-        assert_eq!(fnmatch("foo?", "foo"), None);
     }
 }

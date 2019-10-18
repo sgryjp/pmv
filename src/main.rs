@@ -174,10 +174,14 @@ fn main() {
 }
 
 #[cfg(test)]
-#[test]
-fn test_fnmatch() {
-    assert_eq!(fnmatch("foobar", "foobar"), Some(vec![]));
-    assert_eq!(fnmatch("foo?ar", "foobar"), Some(vec![String::from("b")]));
-    assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
-    assert_eq!(fnmatch("foo?", "foo"), None);
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fnmatch() {
+        assert_eq!(fnmatch("foobar", "foobar"), Some(vec![]));
+        assert_eq!(fnmatch("foo?ar", "foobar"), Some(vec![String::from("b")]));
+        assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
+        assert_eq!(fnmatch("foo?", "foo"), None);
+    }
 }

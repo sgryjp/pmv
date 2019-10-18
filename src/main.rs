@@ -183,10 +183,7 @@ mod tests {
 
     #[test]
     fn test_fnmatch_question_mark() {
-        assert_eq!(
-            fnmatch("?oobar", "foobar"),
-            Some(vec![String::from("f")])
-        );
+        assert_eq!(fnmatch("?oobar", "foobar"), Some(vec![String::from("f")]));
         assert_eq!(
             fnmatch("?oo?ar", "foobar"),
             Some(vec![String::from("f"), String::from("b")])
@@ -195,10 +192,7 @@ mod tests {
             fnmatch("foob??", "foobar"),
             Some(vec![String::from("a"), String::from("r")])
         );
-        assert_eq!(
-            fnmatch("fooba??", "foobar"),
-            None
-        );
+        assert_eq!(fnmatch("fooba??", "foobar"), None);
     }
 
     #[test]

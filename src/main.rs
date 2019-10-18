@@ -10,13 +10,18 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
     let mut j: usize = 0;
     let mut matches: Vec<String> = Vec::new();
     loop {
-        let name_j = if j < name.len() { name[j] } else { 0 as u8 };
+        let name_j = if j < name.len() { name[j] } else { '_' as u8 };
         println!(
             "# fnmatch(): pattern[{}]=\"{}\" name[{}]=\"{}\"",
-            i, pattern[i], j, name_j
+            i, pattern[i] as char, j, name_j as char
         );
         match pattern[i] {
             b'?' => {
+                if name.len() <= j {
+                    return None; // no more chars available for this '?'
+                }
+
+                // Match one character
                 matches.push(String::from_utf8(name[j..=j].to_vec()).unwrap());
                 i += 1;
                 j += 1;
@@ -183,8 +188,15 @@ mod tests {
     }
 
     #[test]
-    fn test_fnmatch_question_mark() {
+    fn test_fnmatch_question_single() {
         assert_eq!(fnmatch("?oobar", "foobar"), Some(vec![String::from("f")]));
+        assert_eq!(fnmatch("fooba?", "foobar"), Some(vec![String::from("r")]));
+        assert_eq!(fnmatch("foobar?", "foobar"), None);
+        assert_eq!(fnmatch("?", ""), None);
+    }
+
+    #[test]
+    fn test_fnmatch_question_multiple() {
         assert_eq!(
             fnmatch("?oo?ar", "foobar"),
             Some(vec![String::from("f"), String::from("b")])

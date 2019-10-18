@@ -16,7 +16,7 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
         );
         match pattern[i] {
             b'?' => {
-                matches.push(String::from_utf8(name[j..j + 1].to_vec()).unwrap());
+                matches.push(String::from_utf8(name[j..=j].to_vec()).unwrap());
                 i += 1;
                 j += 1;
             }
@@ -116,27 +116,24 @@ fn walk(
                     let entry = result?;
                     let fname = entry.file_name();
                     let pattern = p.to_str().unwrap(); //TODO: Handle error
-                    match fnmatch(&pattern, &fname.to_str().unwrap()) {
+                    if let Some(matches) = fnmatch(&pattern, &fname.to_str().unwrap()) {
                         //TODO: Handle error
-                        Some(matches) => {
-                            //println!("{:?} --> {:?}", entry, matches);
-                            matched_paths.push((entry, matches));
-                        }
-                        None => (),
+                        //println!("{:?} --> {:?}", entry, matches);
+                        matched_paths.push((entry, matches));
                     }
                 }
-                return Ok(());
+                Ok(())
             }
         }
     } else {
-        return Ok(());
+        Ok(())
     }
 }
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
-    let src_ptns = &args[1]; // "../.git/.././.git/info/exclude"
-    let dest_ptn: &str = &args[2]; // "../.git/.././.git/info/exclude"
+    let src_ptns = &args[1];
+    let dest_ptn: &str = &args[2];
 
     let src_ptns: Vec<_> = Path::new(&src_ptns).components().collect();
     let mut sources: Vec<(fs::DirEntry, Vec<String>)> = Vec::new();
@@ -162,7 +159,7 @@ fn main() {
                         dest.push_str(&replacement);
                         i += 2;
                     } else {
-                        dest.push_str(&dest_ptn[i..i + 1]);
+                        dest.push_str(&dest_ptn[i..=i]);
                         i += 1;
                     }
                 }

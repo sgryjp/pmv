@@ -10,9 +10,10 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
     let mut j: usize = 0;
     let mut matches: Vec<String> = Vec::new();
     loop {
+        let name_j = if j < name.len() { name[j] } else { 0 as u8 };
         println!(
             "# fnmatch(): pattern[{}]=\"{}\" name[{}]=\"{}\"",
-            i, pattern[i], j, name[j]
+            i, pattern[i], j, name_j
         );
         match pattern[i] {
             b'?' => {
@@ -198,5 +199,9 @@ mod tests {
     #[test]
     fn test_fnmatch_star() {
         assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
+        assert_eq!(fnmatch("foo*", "foobar"), Some(vec![String::from("bar")]));
+        assert_eq!(fnmatch("*bar", "foobar"), Some(vec![String::from("foo")]));
+        assert_eq!(fnmatch("*", "foobar"), Some(vec![String::from("foobar")]));
+        assert_eq!(fnmatch("*", ""), Some(vec![String::from("")]));
     }
 }

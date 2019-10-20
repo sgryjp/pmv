@@ -37,72 +37,69 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
             "# fnmatch(): pattern[{}]=\"{}\" name[{}]=\"{}\"",
             i, pattern[i] as char, j, name_j as char
         );
-        match pattern[i] {
-            b'?' => {
-                if name.len() <= j {
-                    return None; // no more chars available for this '?'
-                }
-
-                // Match one character
-                matches.push(String::from_utf8(name[j..=j].to_vec()).unwrap());
-                i += 1;
-                j += 1;
+        if pattern[i] == b'?' {
+            if name.len() <= j {
+                return None; // no more chars available for this '?'
             }
-            b'*' => {
-                if pattern.len() <= i + 1 {
-                    // Match all the remainings
-                    matches.push(String::from_utf8(name[j..].to_vec()).unwrap());
-                    i += 1;
-                    j = name.len();
-                } else if pattern[i + 1] == b'*' {
-                    // Match an empty string (consume nothing)
-                    i += 1;
-                    matches.push(String::new());
-                } else if pattern[i + 1] == b'?' {
-                    // Count how many question marks are there
-                    let num_questions = 1 + strspn(pattern, i + 2, b'?');
-                    let ii = i + 1 + num_questions;
-                    let matched_len = if ii < pattern.len() {
-                        let term = pattern[ii];
-                        if term == b'*' {
-                            return None; // Patterns like `*?*` are ambiguous
-                        }
-                        strcspn(name, j, term)
-                    } else {
-                        name.len() - j
-                    };
-                    if matched_len < num_questions {
-                        return None; // Too short for the question marks
-                    }
 
-                    // Keep matched parts
-                    let substr_for_star = &name[j..(j + matched_len - num_questions)];
-                    matches.push(String::from_utf8(substr_for_star.to_vec()).unwrap());
-                    for jj in j + substr_for_star.len()..j + matched_len {
-                        matches.push(String::from_utf8(name[jj..=jj].to_vec()).unwrap());
+            // Match one character
+            matches.push(String::from_utf8(name[j..=j].to_vec()).unwrap());
+            i += 1;
+            j += 1;
+        } else if pattern[i] == b'*' {
+            if pattern.len() <= i + 1 {
+                // Match all the remainings
+                matches.push(String::from_utf8(name[j..].to_vec()).unwrap());
+                i += 1;
+                j = name.len();
+            } else if pattern[i + 1] == b'*' {
+                // Match an empty string (consume nothing)
+                i += 1;
+                matches.push(String::new());
+            } else if pattern[i + 1] == b'?' {
+                // Count how many question marks are there
+                let num_questions = 1 + strspn(pattern, i + 2, b'?');
+                let ii = i + 1 + num_questions;
+                let matched_len = if ii < pattern.len() {
+                    let term = pattern[ii];
+                    if term == b'*' {
+                        return None; // Patterns like `*?*` are ambiguous
                     }
-                    i = ii;
-                    j += matched_len;
+                    strcspn(name, j, term)
                 } else {
-                    let mut k = j;
-                    if i + 1 < pattern.len() {
-                        let term = pattern[i + 1];
-                        while name[k] != term {
-                            k += 1;
-                        }
-                    } else {
-                        k = name.len();
-                    }
-                    matches.push(String::from_utf8(name[j..k].to_vec()).unwrap());
-                    i += 1;
-                    j = k;
+                    name.len() - j
+                };
+                if matched_len < num_questions {
+                    return None; // Too short for the question marks
                 }
-            }
-            c if j < name.len() && c == name[j] => {
+
+                // Keep matched parts
+                let substr_for_star = &name[j..(j + matched_len - num_questions)];
+                matches.push(String::from_utf8(substr_for_star.to_vec()).unwrap());
+                for jj in j + substr_for_star.len()..j + matched_len {
+                    matches.push(String::from_utf8(name[jj..=jj].to_vec()).unwrap());
+                }
+                i = ii;
+                j += matched_len;
+            } else {
+                let mut k = j;
+                if i + 1 < pattern.len() {
+                    let term = pattern[i + 1];
+                    while name[k] != term {
+                        k += 1;
+                    }
+                } else {
+                    k = name.len();
+                }
+                matches.push(String::from_utf8(name[j..k].to_vec()).unwrap());
                 i += 1;
-                j += 1;
+                j = k;
             }
-            _ => return None,
+        } else if j < name.len() && pattern[i] == name[j] {
+            i += 1;
+            j += 1;
+        } else {
+            return None;
         }
 
         if pattern.len() <= i {

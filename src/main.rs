@@ -27,18 +27,29 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                 j += 1;
             }
             b'*' => {
-                let mut k = j;
-                if i + 1 < pattern.len() {
-                    let term = pattern[i + 1]; //TODO: Recursive call for "*?"...?
-                    while name[k] != term {
-                        k += 1;
-                    }
+                if pattern.len() <= i + 1 {
+                    // Match all the remainings
+                    matches.push(String::from_utf8(name[j..].to_vec()).unwrap());
+                    i += 1;
+                    j = name.len();
+                } else if pattern[i + 1] == b'*' {
+                    // Match an empty string (consume nothing)
+                    i += 1;
+                    matches.push(String::new());
                 } else {
-                    k = name.len();
+                    let mut k = j;
+                    if i + 1 < pattern.len() {
+                        let term = pattern[i + 1];
+                        while name[k] != term {
+                            k += 1;
+                        }
+                    } else {
+                        k = name.len();
+                    }
+                    matches.push(String::from_utf8(name[j..k].to_vec()).unwrap());
+                    i += 1;
+                    j = k;
                 }
-                matches.push(String::from_utf8(name[j..k].to_vec()).unwrap());
-                i += 1;
-                j = k
             }
             c if c == name[j] => {
                 i += 1;
@@ -209,11 +220,19 @@ mod tests {
     }
 
     #[test]
-    fn test_fnmatch_star() {
+    fn test_fnmatch_star_single() {
         assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
         assert_eq!(fnmatch("foo*", "foobar"), Some(vec![String::from("bar")]));
         assert_eq!(fnmatch("*bar", "foobar"), Some(vec![String::from("foo")]));
         assert_eq!(fnmatch("*", "foobar"), Some(vec![String::from("foobar")]));
         assert_eq!(fnmatch("*", ""), Some(vec![String::from("")]));
+    }
+
+    #[test]
+    fn test_fnmatch_star_multiple() {
+        assert_eq!(
+            fnmatch("f**r", "foobar"),
+            Some(vec![String::from(""), String::from("ooba")])
+        );
     }
 }

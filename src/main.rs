@@ -2,6 +2,24 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf, MAIN_SEPARATOR};
 
+fn strspn(s: &[u8], accept: &[u8]) -> usize {
+    for i in 0..s.len() {
+        if !accept.contains(&s[i]) {
+            return i;
+        }
+    }
+    s.len()
+}
+
+fn strcspn(s: &[u8], reject: &[u8]) -> usize {
+    for i in 0..s.len() {
+        if reject.contains(&s[i]) {
+            return i;
+        }
+    }
+    s.len()
+}
+
 fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
     println!("# fnmatch(pattern={:}, name={:})", pattern, name);
     let pattern = pattern.as_bytes();
@@ -36,6 +54,32 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                     // Match an empty string (consume nothing)
                     i += 1;
                     matches.push(String::new());
+                } else if pattern[i + 1] == b'?' {
+                    // Count how many question marks are there
+                    let num_questions = 1 + strspn(&pattern[i + 2..], b"?");
+                    let ii = i + 1 + num_questions;
+                    let matched_len = if ii < pattern.len() {
+                        let term = pattern[ii];
+                        if term == b'*' {
+                            return None; // Patterns like `*?*` are ambiguous
+                        }
+                        strcspn(&name[j..], &[term])
+                    } else {
+                        name.len() - j
+                    };
+                    let matched = &name[j..j + matched_len];
+                    if matched_len < num_questions {
+                        return None; // Too short for the question marks
+                    }
+
+                    // Keep matched parts
+                    let substr_for_star = &name[j..(j + matched_len - num_questions)];
+                    matches.push(String::from_utf8(substr_for_star.to_vec()).unwrap());
+                    for jj in j + substr_for_star.len()..j + matched_len {
+                        matches.push(String::from_utf8(name[jj..=jj].to_vec()).unwrap());
+                    }
+                    i = ii;
+                    j += matched_len;
                 } else {
                     let mut k = j;
                     if i + 1 < pattern.len() {
@@ -192,6 +236,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_strspn() {
+        assert_eq!(strspn(b"foobar", b""), 0);
+        assert_eq!(strspn(b"foobar", b"fo"), 3);
+        assert_eq!(strspn(b"foobar", b"abfor"), 6);
+    }
+
+    #[test]
+    fn test_strcspn() {
+        assert_eq!(strcspn(b"foobar", b"abf"), 0);
+        assert_eq!(strcspn(b"foobar", b"ab"), 3);
+        assert_eq!(strcspn(b"foobar", b""), 6);
+    }
+
+    #[test]
     fn test_fnmatch_no_special() {
         assert_eq!(fnmatch("fooba", "foobar"), None);
         assert_eq!(fnmatch("foobar", "foobar"), Some(vec![]));
@@ -220,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fnmatch_star_single() {
+    fn test_fnmatch_star() {
         assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
         assert_eq!(fnmatch("foo*", "foobar"), Some(vec![String::from("bar")]));
         assert_eq!(fnmatch("*bar", "foobar"), Some(vec![String::from("foo")]));
@@ -229,10 +287,41 @@ mod tests {
     }
 
     #[test]
-    fn test_fnmatch_star_multiple() {
+    fn test_fnmatch_star_star() {
         assert_eq!(
             fnmatch("f**r", "foobar"),
             Some(vec![String::from(""), String::from("ooba")])
         );
+    }
+
+    #[test]
+    fn test_fnmatch_star_questions() {
+        assert_eq!(
+            fnmatch("fo*??r", "foobar"),
+            Some(vec![
+                String::from("o"),
+                String::from("b"),
+                String::from("a")
+            ])
+        );
+        assert_eq!(
+            fnmatch("foo*??r", "foobar"),
+            Some(vec![String::from(""), String::from("b"), String::from("a")])
+        );
+        assert_eq!(fnmatch("foob*??r", "foobar"), None);
+
+        assert_eq!(
+            fnmatch("foo*??", "foobar"),
+            Some(vec![
+                String::from("b"),
+                String::from("a"),
+                String::from("r")
+            ])
+        );
+    }
+
+    #[test]
+    fn test_fnmatch_star_question_star() {
+        assert_eq!(fnmatch("f*?*r", "foobar"), None);
     }
 }

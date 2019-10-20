@@ -2,22 +2,26 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf, MAIN_SEPARATOR};
 
-fn strspn(s: &[u8], accept: &[u8]) -> usize {
-    for i in 0..s.len() {
-        if !accept.contains(&s[i]) {
-            return i;
+fn strspn(s: &[u8], i: usize, accept: u8) -> usize {
+    let mut j = i;
+    while j < s.len() {
+        if accept != s[j] {
+            return j - i;
         }
+        j += 1;
     }
-    s.len()
+    s.len() - i
 }
 
-fn strcspn(s: &[u8], reject: &[u8]) -> usize {
-    for i in 0..s.len() {
-        if reject.contains(&s[i]) {
-            return i;
+fn strcspn(s: &[u8], i: usize, reject: u8) -> usize {
+    let mut j = i;
+    while j < s.len() {
+        if reject == s[j] {
+            return j - i;
         }
+        j += 1;
     }
-    s.len()
+    s.len() - i
 }
 
 fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
@@ -56,18 +60,17 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                     matches.push(String::new());
                 } else if pattern[i + 1] == b'?' {
                     // Count how many question marks are there
-                    let num_questions = 1 + strspn(&pattern[i + 2..], b"?");
+                    let num_questions = 1 + strspn(pattern, i + 2, b'?');
                     let ii = i + 1 + num_questions;
                     let matched_len = if ii < pattern.len() {
                         let term = pattern[ii];
                         if term == b'*' {
                             return None; // Patterns like `*?*` are ambiguous
                         }
-                        strcspn(&name[j..], &[term])
+                        strcspn(name, j, term)
                     } else {
                         name.len() - j
                     };
-                    let matched = &name[j..j + matched_len];
                     if matched_len < num_questions {
                         return None; // Too short for the question marks
                     }
@@ -237,16 +240,16 @@ mod tests {
 
     #[test]
     fn test_strspn() {
-        assert_eq!(strspn(b"foobar", b""), 0);
-        assert_eq!(strspn(b"foobar", b"fo"), 3);
-        assert_eq!(strspn(b"foobar", b"abfor"), 6);
+        assert_eq!(strspn(b"foobar", 0, b'o'), 0);
+        assert_eq!(strspn(b"foobar", 1, b'o'), 2);
+        assert_eq!(strspn(b"foobar", 5, b'r'), 1);
     }
 
     #[test]
     fn test_strcspn() {
-        assert_eq!(strcspn(b"foobar", b"abf"), 0);
-        assert_eq!(strcspn(b"foobar", b"ab"), 3);
-        assert_eq!(strcspn(b"foobar", b""), 6);
+        assert_eq!(strcspn(b"foobar", 0, b'f'), 0);
+        assert_eq!(strcspn(b"foobar", 1, b'b'), 2);
+        assert_eq!(strcspn(b"foobar", 2, b'x'), 4);
     }
 
     #[test]

@@ -98,7 +98,7 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                     j = k;
                 }
             }
-            c if c == name[j] => {
+            c if j < name.len() && c == name[j] => {
                 i += 1;
                 j += 1;
             }
@@ -111,9 +111,6 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
             } else {
                 return None;
             }
-        }
-        if name.len() <= j {
-            return None;
         }
     }
 }
@@ -287,6 +284,7 @@ mod tests {
         assert_eq!(fnmatch("*bar", "foobar"), Some(vec![String::from("foo")]));
         assert_eq!(fnmatch("*", "foobar"), Some(vec![String::from("foobar")]));
         assert_eq!(fnmatch("*", ""), Some(vec![String::from("")]));
+        assert_eq!(fnmatch("foo*", "foo"), Some(vec![String::from("")]));
     }
 
     #[test]

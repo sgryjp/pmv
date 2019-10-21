@@ -25,18 +25,12 @@ fn strcspn(s: &[u8], i: usize, reject: u8) -> usize {
 }
 
 fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
-    println!("# fnmatch(pattern={:}, name={:})", pattern, name);
     let pattern = pattern.as_bytes();
     let name = name.as_bytes();
     let mut i: usize = 0;
     let mut j: usize = 0;
     let mut matches: Vec<String> = Vec::new();
     loop {
-        let name_j = if j < name.len() { name[j] } else { '_' as u8 };
-        println!(
-            "# fnmatch(): pattern[{}]=\"{}\" name[{}]=\"{}\"",
-            i, pattern[i] as char, j, name_j as char
-        );
         if pattern[i] == b'?' {
             if name.len() <= j {
                 return None; // no more chars available for this '?'
@@ -82,18 +76,11 @@ fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                 i = ii;
                 j += matched_len;
             } else {
-                let mut k = j;
-                if i + 1 < pattern.len() {
-                    let term = pattern[i + 1];
-                    while name[k] != term {
-                        k += 1;
-                    }
-                } else {
-                    k = name.len();
-                }
-                matches.push(String::from_utf8(name[j..k].to_vec()).unwrap());
+                debug_assert!(i + 1 < pattern.len());
+                let jj = j + strcspn(name, j, pattern[i + 1]);
+                matches.push(String::from_utf8(name[j..jj].to_vec()).unwrap());
                 i += 1;
-                j = k;
+                j = jj;
             }
         } else if j < name.len() && pattern[i] == name[j] {
             i += 1;

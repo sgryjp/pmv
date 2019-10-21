@@ -4,6 +4,8 @@ SCRIPT_PATH=`dirname $SCRIPT`
 
 cd "$SCRIPT_PATH/.."
 
+rm -rf target/debug/
+
 cargo test --no-run
 if [ $? -ne 0 ]; then
     echo "Unit test failed."

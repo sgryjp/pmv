@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use pmv::walk;
@@ -8,14 +7,11 @@ fn main() {
     let src_ptns = &args[1];
     let dest_ptn: &str = &args[2];
 
-    let src_ptns: Vec<_> = Path::new(&src_ptns).components().collect();
-    let mut sources: Vec<(fs::DirEntry, Vec<String>)> = Vec::new();
-
-    match walk(Path::new("."), src_ptns.as_slice(), &mut sources) {
-        Err(e) => println!("Error: {:?}", e),
-        Ok(_) => {
-            println!("Ok: {:?}", sources);
-            for (entry, matches) in sources {
+    match walk(Path::new("."), src_ptns) {
+        Err(err) => println!("Error: {:?}", err),
+        Ok(sources) => {
+            for m in sources {
+                let (entry, matches) = m;
                 //println!("# {:?} {:?}", entry, matches);
                 let dest_bytes = dest_ptn.as_bytes();
                 let mut dest = String::new();

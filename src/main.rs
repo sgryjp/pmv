@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate clap;
+use clap::Arg;
+
 use std::cmp;
 use std::env;
 use std::path::Path;
@@ -26,9 +30,22 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
 }
 
 fn main() {
-    let args: Vec<_> = env::args().collect();
-    let src_ptns = &args[1];
-    let dest_ptn: &str = &args[2];
+    let matches = app_from_crate!()
+        .arg(
+            Arg::with_name("SOURCE")
+                .required(true)
+                .index(1)
+                .help("Source pattern"),
+        )
+        .arg(
+            Arg::with_name("DEST")
+                .required(true)
+                .index(2)
+                .help("Destination pattern"),
+        )
+        .get_matches_from(env::args_os());
+    let src_ptns = matches.value_of("SOURCE").unwrap();
+    let dest_ptn = matches.value_of("DEST").unwrap();
 
     match walk(Path::new("."), src_ptns) {
         Err(err) => {

@@ -44,41 +44,40 @@ fn main() {
                 .help("Destination pattern"),
         )
         .get_matches_from(env::args_os());
-    let src_ptns = matches.value_of("SOURCE").unwrap();
+    let src_ptn = matches.value_of("SOURCE").unwrap();
     let dest_ptn = matches.value_of("DEST").unwrap();
 
-    match walk(Path::new("."), src_ptns) {
+    let matches = match walk(Path::new("."), src_ptn) {
         Err(err) => {
             eprintln!("Error: {:?}", err);
             exit(2);
         }
-        Ok(matches) => {
-            let destinations: Vec<_> = matches
-                .iter()
-                .map(|x| replace(dest_ptn, &x.1[..]))
-                .collect();
-            let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
-            assert_eq!(sources.len(), destinations.len());
+        Ok(matches) => matches,
+    };
+    let destinations: Vec<_> = matches
+        .iter()
+        .map(|x| replace(dest_ptn, &x.1[..]))
+        .collect();
+    let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
+    assert_eq!(sources.len(), destinations.len());
 
-            let src_max_len = sources
-                .iter()
-                .map(|x| x.to_str().unwrap().len())
-                .fold(0, |acc, x| cmp::max(acc, x));
+    let src_max_len = sources
+        .iter()
+        .map(|x| x.to_str().unwrap().len())
+        .fold(0, |acc, x| cmp::max(acc, x));
 
-            let mut line = String::new();
-            for (src, dest) in sources.iter().zip(destinations.iter()) {
-                let src = src.to_str().unwrap();
+    let mut line = String::new();
+    for (src, dest) in sources.iter().zip(destinations.iter()) {
+        let src = src.to_str().unwrap();
 
-                line.clear();
-                line.push_str(src);
-                for _ in src.len()..src_max_len {
-                    line.push(' ');
-                }
-                line.push_str(" --> "); //TODO: Wrap line if it's too long
-                line.push_str(dest);
-                println!("{}", line);
-                //std::fs::rename(&entry.path(), &PathBuf::from(dest));
-            }
+        line.clear();
+        line.push_str(src);
+        for _ in src.len()..src_max_len {
+            line.push(' ');
         }
+        line.push_str(" --> "); //TODO: Wrap line if it's too long
+        line.push_str(dest);
+        println!("{}", line);
+        //std::fs::rename(&entry.path(), &PathBuf::from(dest));
     }
 }

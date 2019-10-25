@@ -78,6 +78,8 @@ fn main() {
         line.push_str(" --> "); //TODO: Wrap line if it's too long
         line.push_str(dest);
         println!("{}", line);
-        //std::fs::rename(&entry.path(), &PathBuf::from(dest));
+        if let Err(err) = std::fs::rename(src, dest) {
+            eprintln!("Failed to copy \"{}\": {}", src, err);
+        }
     }
 }

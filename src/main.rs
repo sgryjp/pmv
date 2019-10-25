@@ -46,13 +46,33 @@ fn main() {
             Arg::with_name("SOURCE")
                 .required(true)
                 .index(1)
-                .help("Source pattern"),
+                .help("Source pattern (use --help for details)")
+                .long_help(
+                    "A pattern string specifying files to move. If the pattern contains \
+                     wildcard(s), multiple files matching to the pattern will be targeted. \
+                     Supported wildcards are:\n\n    \
+                     ? ... Matches a single character\n    \
+                     * ... Matches zero or more characters",
+                ),
         )
         .arg(
             Arg::with_name("DEST")
                 .required(true)
                 .index(2)
-                .help("Destination pattern"),
+                .help("Destination pattern (use --help for details)")
+                .long_help(
+                    "A pattern string specifying where to move the targeted files. If the pattern \
+                     contains tokens like `#1` or `#2`, each of them will be replaced with a \
+                     substring extracted from the targeted file path. Those substrings matches \
+                     the wildcard patterns in SOURCE; `#1` matches the first wildcard, `#2` \
+                     matches the second wildcard, respectively. For example, if SOURCE is \
+                     `*_test.py` and DEST is `tests/test_#1.py`:\n\n    \
+                     Exisitng File | Destination\n    \
+                     ------------- | -----------------\n    \
+                     foo_test.py   | tests/test_foo.py\n    \
+                     bar_test.py   | tests/test_bar.py\n    \
+                     hoge_test.py  | tests/test_hoge.py",
+                ),
         )
         .get_matches_from(env::args_os());
     let src_ptn = matches.value_of("SOURCE").unwrap();

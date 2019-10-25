@@ -37,7 +37,7 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
     replaced
 }
 
-fn validate(sources: &Vec<PathBuf>, destinations: &Vec<String>) -> Result<(), String> {
+fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
     // Ensure that no files share a same destination path
     let mut resolved_destinations: Vec<_> = destinations
         .iter()
@@ -59,7 +59,7 @@ fn validate(sources: &Vec<PathBuf>, destinations: &Vec<String>) -> Result<(), St
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn main() {
@@ -137,7 +137,7 @@ fn main() {
     let src_max_len = sources
         .iter()
         .map(|x| x.to_str().unwrap().len())
-        .fold(0, |acc, x| cmp::max(acc, x));
+        .fold(0, cmp::max);
 
     // Validate them
     if let Err(err) = validate(&sources, &destinations) {

@@ -28,7 +28,7 @@ pub fn walk1(
     matches: &mut Vec<(DirEntry, Vec<String>)>,
     matched_parts: &mut Vec<String>,
 ) -> io::Result<()> {
-    if patterns.len() == 0 {
+    if patterns.is_empty() {
         return Ok(());
     }
 

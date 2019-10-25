@@ -21,6 +21,9 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
             let replacement = &substrings[index]; //TODO: Index out of range
             replaced.push_str(replacement);
             i += 2;
+        } else if dest[i] == b'\\' || dest[i] == b'/' {
+            replaced.push(std::path::MAIN_SEPARATOR);
+            i += 1;
         } else {
             replaced.push(dest[i] as char);
             i += 1;

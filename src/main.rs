@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate clap;
-use clap::Arg;
+use clap::{App, Arg};
 
 use std::cmp;
 use std::env;
@@ -33,7 +33,9 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
 }
 
 fn main() {
-    let matches = app_from_crate!()
+    let matches = App::new("pmv")
+        .version(crate_version!())
+        .about(crate_description!())
         .arg(
             Arg::with_name("dry-run")
                 .short("n")

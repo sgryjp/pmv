@@ -42,7 +42,7 @@ fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> 
     let mut resolved_destinations: Vec<_> = destinations
         .iter()
         .enumerate()
-        .map(|x| (x.0, PathBuf::from(x.1).canonicalize().unwrap()))
+        .map(|x| (x.0, PathBuf::from(x.1).canonicalize().unwrap()))  //TODO: if contains dir with 744 this fails
         .collect();
     resolved_destinations.sort_by(|a, b| a.1.cmp(&b.1));
     for i in 1..resolved_destinations.len() {

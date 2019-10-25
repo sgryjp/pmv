@@ -1,5 +1,4 @@
 use std::fs::{self, DirEntry};
-use std::io;
 use std::path::{Component, Path, PathBuf, MAIN_SEPARATOR};
 
 use crate::fnmatch;
@@ -12,14 +11,12 @@ use crate::fnmatch;
 /// For every matched entry this function finds, it creates a pair of an
 /// `std::fs::DirEntry` for it and a vector of the substrings, collect them as
 /// a vector, and return the vector.
-pub fn walk(dir: &Path, pattern: &str) -> io::Result<Vec<(DirEntry, Vec<String>)>> {
+pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<(DirEntry, Vec<String>)>, String> {
     let mut matches: Vec<(DirEntry, Vec<String>)> = Vec::new();
     let mut matched_parts: Vec<String> = Vec::new();
     let patterns: Vec<Component> = Path::new(pattern).components().collect();
-    match walk1(dir, &patterns[..], &mut matches, &mut matched_parts) {
-        Ok(_) => Ok(matches),
-        Err(err) => Err(err),
-    }
+    walk1(dir, &patterns[..], &mut matches, &mut matched_parts)?;
+    Ok(matches)
 }
 
 pub fn walk1(
@@ -27,7 +24,7 @@ pub fn walk1(
     patterns: &[Component],
     matches: &mut Vec<(DirEntry, Vec<String>)>,
     matched_parts: &mut Vec<String>,
-) -> io::Result<()> {
+) -> Result<(), String> {
     if patterns.is_empty() {
         return Ok(());
     }
@@ -57,8 +54,21 @@ pub fn walk1(
         }
         Component::Normal(pattern) => {
             // Move into the matched sub-directories
-            for result in fs::read_dir(dir)? {
-                let entry = result?;
+            let entry_iter = match fs::read_dir(dir) {
+                Err(err) => {
+                    return Err(format!(
+                        "fs::read_dir() failed: dir=\"{}\", error=\"{}\"",
+                        dir.to_str().unwrap(),
+                        err
+                    ))
+                }
+                Ok(iter) => iter,
+            };
+            for maybe_entry in entry_iter {
+                let entry = match maybe_entry {
+                    Err(err) => return Err(format!("failed to get a directory entry: {}", err)), //TODO: Test this
+                    Ok(entry) => entry,
+                };
                 let fname = entry.file_name();
                 let pattern = pattern.to_str().unwrap();
                 if let Some(mut m) = fnmatch(pattern, fname.to_str().unwrap()) {

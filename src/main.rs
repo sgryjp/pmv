@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate ansi_term;
 use clap::{App, Arg};
 
 use std::cmp;
@@ -8,6 +9,10 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use pmv::walk;
+
+fn style_error(s: &str) -> ansi_term::ANSIString {
+    ansi_term::Color::Red.bold().paint(s)
+}
 
 /// Replaces variables in the given destination path string using the given
 /// substrings.
@@ -45,8 +50,8 @@ fn validate(sources: &Vec<PathBuf>, destinations: &Vec<String>) -> Result<(), St
         let p2 = &resolved_destinations[i];
         if p1.1 == p2.1 {
             return Err(format!(
-                "error: Destination must be different for each file \
-                 (both \"{}\" and \"{}\" to \"{}\").",
+                "destination must be different for each file: \
+                 tried to move both \"{}\" and \"{}\" to \"{}\"",
                 sources[p1.0].to_str().unwrap(),
                 sources[p2.0].to_str().unwrap(),
                 destinations[p1.0],
@@ -58,6 +63,11 @@ fn validate(sources: &Vec<PathBuf>, destinations: &Vec<String>) -> Result<(), St
 }
 
 fn main() {
+    // Enable colored output
+    #[cfg(windows)]
+    ansi_term::enable_ansi_support().unwrap();
+
+    // Parse arguments
     let matches = App::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
@@ -104,9 +114,14 @@ fn main() {
     let dest_ptn = matches.value_of("DEST").unwrap();
     let dry_run = 0 < matches.occurrences_of("dry-run");
 
+    // Gather source and destination paths
     let matches = match walk(Path::new("."), src_ptn) {
         Err(err) => {
-            eprintln!("Error: {:?}", err);
+            eprintln!(
+                "{}: failed to scan directory tree: {}",
+                style_error("error"),
+                err
+            );
             exit(2);
         }
         Ok(matches) => matches,
@@ -118,16 +133,19 @@ fn main() {
     let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
     assert_eq!(sources.len(), destinations.len());
 
+    // Calculate max width for printing
     let src_max_len = sources
         .iter()
         .map(|x| x.to_str().unwrap().len())
         .fold(0, |acc, x| cmp::max(acc, x));
 
+    // Validate them
     if let Err(err) = validate(&sources, &destinations) {
-        eprintln!("{}", err);
+        eprintln!("{}: {}", style_error("error"), err);
         exit(1);
     }
 
+    // Move files
     let mut line = String::new();
     for (src, dest) in sources.iter().zip(destinations.iter()) {
         let src = src.to_str().unwrap();
@@ -142,7 +160,12 @@ fn main() {
         println!("{}", line);
         if !dry_run {
             if let Err(err) = std::fs::rename(src, dest) {
-                eprintln!("Failed to copy \"{}\": {}", src, err);
+                eprintln!(
+                    "{}: failed to copy \"{}\": {}",
+                    style_error("error"),
+                    src,
+                    err
+                );
             }
         }
     }

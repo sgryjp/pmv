@@ -4,7 +4,7 @@ use clap::{App, Arg};
 
 use std::cmp;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use pmv::walk;
@@ -30,6 +30,31 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
         }
     }
     replaced
+}
+
+fn validate(sources: &Vec<PathBuf>, destinations: &Vec<String>) -> Result<(), String> {
+    // Ensure that no files share a same destination path
+    let mut resolved_destinations: Vec<_> = destinations
+        .iter()
+        .enumerate()
+        .map(|x| (x.0, PathBuf::from(x.1).canonicalize().unwrap()))
+        .collect();
+    resolved_destinations.sort_by(|a, b| a.1.cmp(&b.1));
+    for i in 1..resolved_destinations.len() {
+        let p1 = &resolved_destinations[i - 1];
+        let p2 = &resolved_destinations[i];
+        if p1.1 == p2.1 {
+            return Err(format!(
+                "error: Destination must be different for each file \
+                 (both \"{}\" and \"{}\" to \"{}\").",
+                sources[p1.0].to_str().unwrap(),
+                sources[p2.0].to_str().unwrap(),
+                destinations[p1.0],
+            ));
+        }
+    }
+
+    return Ok(());
 }
 
 fn main() {
@@ -97,6 +122,11 @@ fn main() {
         .iter()
         .map(|x| x.to_str().unwrap().len())
         .fold(0, |acc, x| cmp::max(acc, x));
+
+    if let Err(err) = validate(&sources, &destinations) {
+        eprintln!("{}", err);
+        exit(1);
+    }
 
     let mut line = String::new();
     for (src, dest) in sources.iter().zip(destinations.iter()) {

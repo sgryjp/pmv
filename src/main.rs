@@ -39,15 +39,11 @@ fn replace(dest_ptn: &str, substrings: &[String]) -> String {
 
 fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
     // Ensure that no files share a same destination path
-    let mut resolved_destinations: Vec<_> = destinations
-        .iter()
-        .enumerate()
-        .map(|x| (x.0, PathBuf::from(x.1).canonicalize().unwrap()))  //TODO: if contains dir with 744 this fails
-        .collect();
-    resolved_destinations.sort_by(|a, b| a.1.cmp(&b.1));
-    for i in 1..resolved_destinations.len() {
-        let p1 = &resolved_destinations[i - 1];
-        let p2 = &resolved_destinations[i];
+    let mut sorted: Vec<_> = destinations.iter().enumerate().collect();
+    sorted.sort_by(|a, b| a.1.cmp(&b.1));
+    for i in 1..sorted.len() {
+        let p1 = &sorted[i - 1];
+        let p2 = &sorted[i];
         if p1.1 == p2.1 {
             return Err(format!(
                 "destination must be different for each file: \
@@ -168,5 +164,34 @@ fn main() {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validation_ok() {
+        let sources: Vec<PathBuf> = vec!["src/foo.rs"].iter().map(PathBuf::from).collect();
+        let destinations: Vec<_> = vec![String::from("src/foo")];
+        let result = validate(&sources, &destinations);
+        result.unwrap();
+    }
+
+    #[test]
+    fn test_validation_duplicated_dest() {
+        let sources: Vec<PathBuf> = vec!["src/foo.rs", "src/bar.rs"]
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+        let destinations: Vec<String> = vec!["src/foo.rs", "src/foo.rs"]
+            .iter()
+            .map(|x| String::from(*x))
+            .collect();
+        let result = validate(&sources, &destinations);
+        let err = result.unwrap_err();
+        assert!(err.contains("destination must be different for each file"));
+        assert!(err.contains("src/foo.rs"));
     }
 }

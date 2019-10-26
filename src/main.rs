@@ -58,6 +58,39 @@ fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> 
     Ok(())
 }
 
+fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) {
+    // Calculate max width for printing
+    let src_max_len = sources
+        .iter()
+        .map(|x| x.to_str().unwrap().len())
+        .fold(0, cmp::max);
+
+    // Move files
+    let mut line = String::new();
+    for (src, dest) in sources.iter().zip(destinations.iter()) {
+        let src = src.to_str().unwrap();
+
+        line.clear();
+        line.push_str(src);
+        for _ in src.len()..src_max_len {
+            line.push(' ');
+        }
+        line.push_str(" --> "); //TODO: Wrap line if it's too long
+        line.push_str(dest);
+        println!("{}", line);
+        if !dry_run {
+            if let Err(err) = std::fs::rename(src, dest) {
+                eprintln!(
+                    "{}: failed to copy \"{}\": {}",
+                    style_error("error"),
+                    src,
+                    err
+                );
+            }
+        }
+    }
+}
+
 fn main() {
     // Enable colored output
     #[cfg(windows)]
@@ -129,12 +162,6 @@ fn main() {
     let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
     assert_eq!(sources.len(), destinations.len());
 
-    // Calculate max width for printing
-    let src_max_len = sources
-        .iter()
-        .map(|x| x.to_str().unwrap().len())
-        .fold(0, cmp::max);
-
     // Validate them
     if let Err(err) = validate(&sources, &destinations) {
         eprintln!("{}: {}", style_error("error"), err);
@@ -142,29 +169,7 @@ fn main() {
     }
 
     // Move files
-    let mut line = String::new();
-    for (src, dest) in sources.iter().zip(destinations.iter()) {
-        let src = src.to_str().unwrap();
-
-        line.clear();
-        line.push_str(src);
-        for _ in src.len()..src_max_len {
-            line.push(' ');
-        }
-        line.push_str(" --> "); //TODO: Wrap line if it's too long
-        line.push_str(dest);
-        println!("{}", line);
-        if !dry_run {
-            if let Err(err) = std::fs::rename(src, dest) {
-                eprintln!(
-                    "{}: failed to copy \"{}\": {}",
-                    style_error("error"),
-                    src,
-                    err
-                );
-            }
-        }
-    }
+    move_files(&sources, &destinations, dry_run);
 }
 
 #[cfg(test)]

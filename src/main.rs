@@ -8,7 +8,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use pmv::{replace, walk};
+use pmv::{resolve, walk};
 
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
@@ -146,7 +146,7 @@ fn main() {
     };
     let destinations: Vec<_> = matches
         .iter()
-        .map(|x| replace(dest_ptn, &x.1[..]))
+        .map(|x| resolve(dest_ptn, &x.1[..]))
         .collect();
     let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
     assert_eq!(sources.len(), destinations.len());

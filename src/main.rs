@@ -8,7 +8,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use pmv::walk;
+use pmv::{replace, walk};
 
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
@@ -17,29 +17,6 @@ fn style_error(s: &str) -> ansi_term::ANSIString {
     } else {
         ansi_term::ANSIGenericString::from(s) // LCOV_EXCL_LINE
     }
-}
-
-/// Replaces variables in the given destination path string using the given
-/// substrings.
-fn replace(dest_ptn: &str, substrings: &[String]) -> String {
-    let dest = dest_ptn.as_bytes();
-    let mut replaced = String::new();
-    let mut i = 0;
-    while i < dest.len() {
-        if dest[i] == b'#' && i + 1 < dest.len() && b'1' <= dest[i + 1] && dest[i + 1] <= b'9' {
-            let index = (dest[i + 1] - b'1') as usize;
-            let replacement = &substrings[index]; //TODO: Index out of range
-            replaced.push_str(replacement);
-            i += 2;
-        } else if dest[i] == b'\\' || dest[i] == b'/' {
-            replaced.push(std::path::MAIN_SEPARATOR);
-            i += 1;
-        } else {
-            replaced.push(dest[i] as char);
-            i += 1;
-        }
-    }
-    replaced
 }
 
 fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {

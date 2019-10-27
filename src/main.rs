@@ -235,7 +235,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run);
+        let num_errors = move_files(&sources, &dests, dry_run, false);
 
         assert!(!sources[0].exists());
         assert!(!sources[1].exists());
@@ -281,7 +281,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = true;
-        let num_errors = move_files(&sources, &dests, dry_run);
+        let num_errors = move_files(&sources, &dests, dry_run, false);
 
         assert!(sources[0].exists());
         assert!(sources[1].exists());
@@ -315,7 +315,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run);
+        let num_errors = move_files(&sources, &dests, dry_run, false);
 
         assert!(sources[0].exists());
         assert!(sources[1].exists());

@@ -10,11 +10,12 @@ use std::process::exit;
 
 use pmv::walk;
 
+/// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
     if atty::is(atty::Stream::Stderr) {
         ansi_term::Color::Red.bold().paint(s)
     } else {
-        ansi_term::ANSIGenericString::from(s)
+        ansi_term::ANSIGenericString::from(s) // LCOV_EXCL_LINE
     }
 }
 

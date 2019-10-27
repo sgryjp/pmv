@@ -58,7 +58,9 @@ fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> 
     Ok(())
 }
 
-fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) {
+fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) -> i32 {
+    let mut num_errors = 0;
+
     // Calculate max width for printing
     let src_max_len = sources
         .iter()
@@ -86,9 +88,12 @@ fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) {
                     src,
                     err
                 );
+                num_errors += 1;
             }
         }
     }
+
+    num_errors
 }
 
 fn main() {
@@ -175,6 +180,21 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+
+    fn setup(id: &str) {
+        let _ = fs::create_dir(Path::new("temp"));
+        let _ = fs::remove_dir_all(Path::new(&format!("temp/{}", id)));
+        for dir1 in ["foo", "bar", "baz"].iter() {
+            for dir2 in ["foo", "bar", "baz"].iter() {
+                let _ = fs::create_dir_all(Path::new(&format!("temp/{}/{}/{}", id, dir1, dir2)));
+                for fname in ["foo", "bar", "baz"].iter() {
+                    let path: String = format!("temp/{}/{}/{}/{}", id, dir1, dir2, fname);
+                    fs::write(Path::new(&path), path.as_bytes()).unwrap();
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_validation_ok() {
@@ -198,5 +218,119 @@ mod tests {
         let err = result.unwrap_err();
         assert!(err.contains("destination must be different for each file"));
         assert!(err.contains("src/foo.rs"));
+    }
+
+    #[test]
+    fn test_move_files_ok() {
+        let id = "test_move_files_ok";
+        setup(id);
+
+        let sources: Vec<PathBuf> = vec![
+            format!("temp/{}/foo/foo/foo", id),
+            format!("temp/{}/foo/bar/foo", id),
+            format!("temp/{}/foo/baz/foo", id),
+        ]
+        .iter()
+        .map(PathBuf::from)
+        .collect();
+        let dests: Vec<String> = vec![
+            format!("temp/{}/foo/foo/zzz", id),
+            format!("temp/{}/foo/bar/zzz", id),
+            format!("temp/{}/foo/baz/zzz", id),
+        ]
+        .iter()
+        .map(|x| String::from(x))
+        .collect();
+        let dry_run = false;
+        let num_errors = move_files(&sources, &dests, dry_run);
+
+        assert!(!sources[0].exists());
+        assert!(!sources[1].exists());
+        assert!(!sources[2].exists());
+        assert!(Path::new(&dests[0]).exists());
+        assert!(Path::new(&dests[1]).exists());
+        assert!(Path::new(&dests[2]).exists());
+        assert_eq!(
+            fs::read_to_string(Path::new(&dests[0])).unwrap(),
+            sources[0].to_str().unwrap(),
+        );
+        assert_eq!(
+            fs::read_to_string(Path::new(&dests[1])).unwrap(),
+            sources[1].to_str().unwrap(),
+        );
+        assert_eq!(
+            fs::read_to_string(Path::new(&dests[2])).unwrap(),
+            sources[2].to_str().unwrap(),
+        );
+
+        assert_eq!(num_errors, 0);
+    }
+
+    #[test]
+    fn test_move_files_dry_run() {
+        let id = "test_move_files_dry_run";
+        setup(id);
+
+        let sources: Vec<PathBuf> = vec![
+            format!("temp/{}/foo/foo/foo", id),
+            format!("temp/{}/foo/bar/foo", id),
+            format!("temp/{}/foo/baz/foo", id),
+        ]
+        .iter()
+        .map(PathBuf::from)
+        .collect();
+        let dests: Vec<String> = vec![
+            format!("temp/{}/foo/foo/zzz", id),
+            format!("temp/{}/foo/bar/zzz", id),
+            format!("temp/{}/foo/baz/zzz", id),
+        ]
+        .iter()
+        .map(|x| String::from(x))
+        .collect();
+        let dry_run = true;
+        let num_errors = move_files(&sources, &dests, dry_run);
+
+        assert!(sources[0].exists());
+        assert!(sources[1].exists());
+        assert!(sources[2].exists());
+        assert!(!Path::new(&dests[0]).exists());
+        assert!(!Path::new(&dests[1]).exists());
+        assert!(!Path::new(&dests[2]).exists());
+
+        assert_eq!(num_errors, 0);
+    }
+
+    #[test]
+    fn test_move_files_invalid_dest() {
+        let id = "test_move_files_invalid_dest";
+        setup(id);
+
+        let sources: Vec<PathBuf> = vec![
+            format!("temp/{}/foo/foo/foo", id),
+            format!("temp/{}/foo/bar/foo", id),
+            format!("temp/{}/foo/baz/foo", id),
+        ]
+        .iter()
+        .map(PathBuf::from)
+        .collect();
+        let dests: Vec<String> = vec![
+            format!("temp/{}/foo/foo/\0", id),
+            format!("temp/{}/foo/bar/\0", id),
+            format!("temp/{}/foo/baz/\0", id),
+        ]
+        .iter()
+        .map(|x| String::from(x))
+        .collect();
+        let dry_run = false;
+        let num_errors = move_files(&sources, &dests, dry_run);
+
+        assert!(sources[0].exists());
+        assert!(sources[1].exists());
+        assert!(sources[2].exists());
+        assert!(!Path::new(&dests[0]).exists());
+        assert!(!Path::new(&dests[1]).exists());
+        assert!(!Path::new(&dests[2]).exists());
+
+        assert_eq!(num_errors, 3);
     }
 }

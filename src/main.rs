@@ -40,7 +40,7 @@ fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> 
     Ok(())
 }
 
-fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) -> i32 {
+fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool, verbose: bool) -> i32 {
     let mut num_errors = 0;
 
     // Calculate max width for printing
@@ -61,7 +61,9 @@ fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool) -> i3
         }
         line.push_str(" --> "); //TODO: Wrap line if it's too long
         line.push_str(dest);
-        println!("{}", line);
+        if verbose || dry_run {
+            println!("{}", line);
+        }
         if !dry_run {
             if let Err(err) = std::fs::rename(src, dest) {
                 eprintln!(
@@ -94,6 +96,12 @@ fn main() {
                 .short("n")
                 .long("dry-run")
                 .help("Do not actually move the files, just show what would be done."),
+        )
+        .arg(
+            clap::Arg::with_name("verbose")
+                .short("v")
+                .long("verbose")
+                .help("Write verbose message."),
         )
         .arg(
             clap::Arg::with_name("SOURCE")
@@ -131,6 +139,7 @@ fn main() {
     let src_ptn = matches.value_of("SOURCE").unwrap();
     let dest_ptn = matches.value_of("DEST").unwrap();
     let dry_run = 0 < matches.occurrences_of("dry-run");
+    let verbose = 0 < matches.occurrences_of("verbose");
 
     // Gather source and destination paths
     let matches = match walk(Path::new("."), src_ptn) {
@@ -158,7 +167,7 @@ fn main() {
     }
 
     // Move files
-    move_files(&sources, &destinations, dry_run);
+    move_files(&sources, &destinations, dry_run, verbose);
 }
 
 #[cfg(test)]

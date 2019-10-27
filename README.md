@@ -26,6 +26,9 @@ FLAGS:
     -V, --version
             Prints version information
 
+    -v, --verbose
+            Write verbose message.
+
 
 ARGS:
     <SOURCE>

@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate clap;
 extern crate ansi_term;
-use clap::{App, Arg};
 
 use std::cmp;
 use std::env;
@@ -102,17 +101,17 @@ fn main() {
     ansi_term::enable_ansi_support().unwrap();
 
     // Parse arguments
-    let matches = App::new("pmv")
+    let matches = clap::App::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
         .arg(
-            Arg::with_name("dry-run")
+            clap::Arg::with_name("dry-run")
                 .short("n")
                 .long("dry-run")
                 .help("Do not actually move the files, just show what would be done."),
         )
         .arg(
-            Arg::with_name("SOURCE")
+            clap::Arg::with_name("SOURCE")
                 .required(true)
                 .index(1)
                 .help("Source pattern (use --help for details)")
@@ -125,7 +124,7 @@ fn main() {
                 ),
         )
         .arg(
-            Arg::with_name("DEST")
+            clap::Arg::with_name("DEST")
                 .required(true)
                 .index(2)
                 .help("Destination pattern (use --help for details)")

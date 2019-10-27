@@ -13,7 +13,15 @@ pub fn resolve(dest: &str, substrings: &[String]) -> String {
     while i < dest.len() {
         if dest[i] == b'#' && i + 1 < dest.len() && b'1' <= dest[i + 1] && dest[i + 1] <= b'9' {
             let index = (dest[i + 1] - b'1') as usize;
-            let replacement = &substrings[index]; //TODO: Index out of range
+            let replacement = match substrings.get(index) {
+                Some(s) => s,
+                None => {
+                    resolved.push('#');
+                    resolved.push(dest[i + 1] as char);
+                    i += 2;
+                    continue;
+                }
+            };
             resolved.push_str(replacement);
             i += 2;
         } else if dest[i] == b'\\' || dest[i] == b'/' {

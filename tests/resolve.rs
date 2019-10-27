@@ -132,18 +132,18 @@ fn test_resolve_dest_var_multi_usage() {
     );
 }
 
-// #[test]
-// fn test_resolve_dest_var_index_out_of_range() {
-//     let dest = "/foo/#3/#1#2.txt";
-//     let substrs = vec!["v1"]
-//         .iter()
-//         .map(|x| String::from(*x))
-//         .collect::<Vec<_>>();
-//     assert_eq!(
-//         resolve(dest, &substrs[..]),
-//         format!("{}foo{}#3{}v1#2.txt", SEP, SEP, SEP)
-//     );
-// }
+#[test]
+fn test_resolve_dest_var_index_out_of_range() {
+    let dest = "/foo/#3/#1#2.txt";
+    let substrs = vec!["v1"]
+        .iter()
+        .map(|x| String::from(*x))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        resolve(dest, &substrs[..]),
+        format!("{}foo{}#3{}v1#2.txt", SEP, SEP, SEP)
+    );
+}
 
 #[test]
 fn test_resolve_dest_slash_substitution() {

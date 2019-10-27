@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate clap;
 extern crate ansi_term;
+extern crate atty;
 
 use std::cmp;
 use std::env;
@@ -10,7 +11,11 @@ use std::process::exit;
 use pmv::walk;
 
 fn style_error(s: &str) -> ansi_term::ANSIString {
-    ansi_term::Color::Red.bold().paint(s)
+    if atty::is(atty::Stream::Stderr) {
+        ansi_term::Color::Red.bold().paint(s)
+    } else {
+        ansi_term::ANSIGenericString::from(s)
+    }
 }
 
 /// Replaces variables in the given destination path string using the given
@@ -104,6 +109,8 @@ fn main() {
     let matches = clap::App::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
+        .setting(clap::AppSettings::ColorAuto)
+        .setting(clap::AppSettings::ColoredHelp)
         .arg(
             clap::Arg::with_name("dry-run")
                 .short("n")

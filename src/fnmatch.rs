@@ -10,6 +10,7 @@
 ///     String::from("b"),
 ///     String::from("a"),
 /// ]));
+/// assert_eq!(fnmatch("f*??r", "blah"), None);
 /// ```
 pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
     let pattern = pattern.as_bytes();

@@ -6,7 +6,7 @@ authors = ["Suguru Yamamoto <sgryjp@gmail.com>"]
 homepage = "https://github.com/sgryjp/pmv"
 readme = "README.md"
 license = "MIT"
-categories = ["command-line-utilities"]
+categories = ["command-line-utilities", "filesystem"]
 edition = "2018"
 
 [dependencies]

@@ -55,9 +55,7 @@ ARGS:
 
 ## Cargo
 
-For now, pmv can be installed using the command below:
-
-    $ cargo install --git https://github.com/sgryjp/pmv.git pmv
+    $ cargo install pmv
 
 Rust 1.36.0 or newer is required to build `pmv`.
 

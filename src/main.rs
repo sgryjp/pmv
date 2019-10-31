@@ -52,6 +52,12 @@ fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool, verbo
     // Move files
     let mut line = String::new();
     for (src, dest) in sources.iter().zip(destinations.iter()) {
+        // Append basename of src to dest if dest is a directory
+        let mut dest = PathBuf::from(dest);
+        if dest.is_dir() {
+            dest.push(src.file_name().unwrap());
+        }
+        let dest = dest.to_str().unwrap();
         let src = src.to_str().unwrap();
 
         line.clear();
@@ -325,5 +331,58 @@ mod tests {
         assert!(!Path::new(&dests[2]).exists());
 
         assert_eq!(num_errors, 3);
+    }
+
+    #[test]
+    fn test_move_files_file_to_file() {
+        let id = "test_move_files_file_to_file";
+        setup(id);
+
+        let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+        let dests: Vec<String> = vec![format!("temp/{}/foo/foo/bar", id)]
+            .iter()
+            .map(|x| String::from(x))
+            .collect();
+        let dry_run = false;
+        let num_errors = move_files(&sources, &dests, dry_run, false);
+
+        assert!(!sources[0].exists());
+        assert!(Path::new(&dests[0]).exists());
+        assert_eq!(
+            fs::read_to_string(Path::new(&dests[0])).unwrap(),
+            format!("temp/{}/foo/foo/foo", id)
+        );
+
+        assert_eq!(num_errors, 0);
+    }
+
+    #[test]
+    fn test_move_files_file_to_dir() {
+        let id = "test_move_files_file_to_dir";
+        setup(id);
+
+        let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+        let dests: Vec<String> = vec![format!("temp/{}/foo/bar", id)]
+            .iter()
+            .map(|x| String::from(x))
+            .collect();
+        let dry_run = false;
+        let num_errors = move_files(&sources, &dests, dry_run, false);
+
+        let expected_dest = format!("temp/{}/foo/bar/foo", id);
+        assert!(!sources[0].exists());
+        assert!(Path::new(&expected_dest).exists());
+        assert_eq!(
+            fs::read_to_string(Path::new(&expected_dest)).unwrap(),
+            format!("temp/{}/foo/foo/foo", id)
+        );
+
+        assert_eq!(num_errors, 0);
     }
 }

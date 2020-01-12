@@ -40,7 +40,13 @@ fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> 
     Ok(())
 }
 
-fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool, verbose: bool) -> i32 {
+fn move_files(
+    sources: &[PathBuf],
+    destinations: &[String],
+    dry_run: bool,
+    verbose: bool,
+    on_error: Option<&(Fn(&str, &str, &std::io::Error) -> ())>,
+) -> i32 {
     let mut num_errors = 0;
 
     // Calculate max width for printing
@@ -72,12 +78,9 @@ fn move_files(sources: &[PathBuf], destinations: &[String], dry_run: bool, verbo
         }
         if !dry_run {
             if let Err(err) = std::fs::rename(src, dest) {
-                eprintln!(
-                    "{}: failed to copy \"{}\": {}",
-                    style_error("error"),
-                    src,
-                    err
-                );
+                if let Some(f) = on_error {
+                    f(src, dest, &err);
+                }
                 num_errors += 1;
             }
         }
@@ -173,7 +176,20 @@ fn main() {
     }
 
     // Move files
-    move_files(&sources, &destinations, dry_run, verbose);
+    move_files(
+        &sources,
+        &destinations,
+        dry_run,
+        verbose,
+        Some(&|src, _dest, err| {
+            eprintln!(
+                "{}: failed to copy \"{}\": {}",
+                style_error("error"),
+                src,
+                err
+            );
+        }),
+    );
 }
 
 #[cfg(test)]
@@ -256,7 +272,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, false);
+        let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
         assert!(!sources[0].exists());
         assert!(!sources[1].exists());
@@ -302,7 +318,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = true;
-        let num_errors = move_files(&sources, &dests, dry_run, false);
+        let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
         assert!(sources[0].exists());
         assert!(sources[1].exists());
@@ -336,7 +352,7 @@ mod tests {
         .map(|x| String::from(x))
         .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, false);
+        let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
         assert!(sources[0].exists());
         assert!(sources[1].exists());
@@ -362,7 +378,7 @@ mod tests {
             .map(|x| String::from(x))
             .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, false);
+        let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
         assert!(!sources[0].exists());
         assert!(Path::new(&dests[0]).exists());
@@ -388,7 +404,7 @@ mod tests {
             .map(|x| String::from(x))
             .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, false);
+        let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
         let expected_dest = format!("temp/{}/foo/bar/foo", id);
         assert!(!sources[0].exists());
@@ -416,7 +432,7 @@ mod tests {
             .map(|x| String::from(x))
             .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, true);
+        let num_errors = move_files(&sources, &dests, dry_run, true, None);
 
         assert!(!sources[0].exists());
         assert!(Path::new(&dests[0]).exists());
@@ -443,7 +459,7 @@ mod tests {
             .map(|x| String::from(x))
             .collect();
         let dry_run = false;
-        let num_errors = move_files(&sources, &dests, dry_run, true);
+        let num_errors = move_files(&sources, &dests, dry_run, true, None);
 
         let expected_dest1 = format!("temp/{}/symlink2dir/foo", id);
         let expected_dest2 = format!("temp/{}/baz/baz/foo", id);

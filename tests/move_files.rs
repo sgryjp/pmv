@@ -50,11 +50,6 @@ fn content_of(id: &str, name: &str) -> String {
 }
 
 #[test]
-fn ok() {
-    // Essentially same as "file_to_file"
-}
-
-#[test]
 fn dry_run() {
     let id = "dry_run";
 
@@ -128,6 +123,25 @@ fn file_to_dir() {
     assert!(!mkpathbuf(id, "f1").exists());
     assert!(mkpathbuf(id, "d1/f1").exists());
     assert_eq!(content_of(id, "d1/f1"), format!("temp/{}/f1", id));
+}
+
+#[test]
+fn dir_to_dir() {
+    let id = "dir_to_dir";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mkdir(id, "d2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "d2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "d1").exists());
+    assert!(mkpathbuf(id, "d2").exists());
+    assert!(mkpathbuf(id, "d2/d1").exists());
 }
 
 #[cfg(unix)]

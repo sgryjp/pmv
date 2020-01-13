@@ -45,7 +45,7 @@ fn move_files(
     destinations: &[String],
     dry_run: bool,
     verbose: bool,
-    on_error: Option<&(Fn(&str, &str, &std::io::Error) -> ())>,
+    on_error: Option<&dyn Fn(&str, &str, &std::io::Error) -> ()>,
 ) -> i32 {
     let mut num_errors = 0;
 

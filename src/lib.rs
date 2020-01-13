@@ -5,7 +5,8 @@ pub use fnmatch::fnmatch;
 pub use walk::walk;
 
 use std::cmp;
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 
 /// Replaces variables in the given destination path string using the given
 /// substrings.
@@ -43,7 +44,7 @@ pub fn move_files(
     destinations: &[String],
     dry_run: bool,
     verbose: bool,
-    on_error: Option<&dyn Fn(&str, &str, &std::io::Error) -> ()>,
+    on_error: Option<&dyn Fn(&str, &str, &io::Error) -> ()>,
 ) -> i32 {
     let mut num_errors = 0;
 
@@ -56,6 +57,20 @@ pub fn move_files(
     // Move files
     let mut line = String::new();
     for (src, dest) in sources.iter().zip(destinations.iter()) {
+        // Reject if moving a directory to path where a file exists
+        // (Windows accepts this case but Linux does not)
+        if src.is_dir() && Path::new(&dest).is_file() {
+            if let Some(f) = on_error {
+                let err = io::Error::new(
+                    io::ErrorKind::Other,
+                    "overwriting a file with a directory is not allowed",
+                );
+                f(src.to_str().unwrap(), dest, &err);
+            }
+            num_errors += 1;
+            continue;
+        }
+
         // Append basename of src to dest if dest is a directory
         let mut dest = PathBuf::from(dest);
         if dest.is_dir() {

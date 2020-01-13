@@ -126,6 +126,25 @@ fn file_to_dir() {
 }
 
 #[test]
+fn dir_to_file() {
+    let id = "dir_to_file";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mkfile(id, "f1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "f1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 1);
+    assert!(mkpathbuf(id, "d1").exists());
+    assert!(mkpathbuf(id, "f1").exists());
+    assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
+}
+
+#[test]
 fn dir_to_dir() {
     let id = "dir_to_dir";
 

@@ -4,6 +4,9 @@ mod walk;
 pub use fnmatch::fnmatch;
 pub use walk::walk;
 
+use std::cmp;
+use std::path::PathBuf;
+
 /// Replaces variables in the given destination path string using the given
 /// substrings.
 pub fn resolve(dest: &str, substrings: &[String]) -> String {
@@ -33,4 +36,53 @@ pub fn resolve(dest: &str, substrings: &[String]) -> String {
         }
     }
     resolved
+}
+
+pub fn move_files(
+    sources: &[PathBuf],
+    destinations: &[String],
+    dry_run: bool,
+    verbose: bool,
+    on_error: Option<&dyn Fn(&str, &str, &std::io::Error) -> ()>,
+) -> i32 {
+    let mut num_errors = 0;
+
+    // Calculate max width for printing
+    let src_max_len = sources
+        .iter()
+        .map(|x| x.to_str().unwrap().len())
+        .fold(0, cmp::max);
+
+    // Move files
+    let mut line = String::new();
+    for (src, dest) in sources.iter().zip(destinations.iter()) {
+        // Append basename of src to dest if dest is a directory
+        let mut dest = PathBuf::from(dest);
+        if dest.is_dir() {
+            dest.push(src.file_name().unwrap());
+        }
+        let dest = dest.to_str().unwrap();
+        let src = src.to_str().unwrap();
+
+        line.clear();
+        line.push_str(src);
+        for _ in src.len()..src_max_len {
+            line.push(' ');
+        }
+        line.push_str(" --> "); //TODO: Wrap line if it's too long
+        line.push_str(dest);
+        if verbose || dry_run {
+            println!("{}", line);
+        }
+        if !dry_run {
+            if let Err(err) = std::fs::rename(src, dest) {
+                if let Some(f) = on_error {
+                    f(src, dest, &err);
+                }
+                num_errors += 1;
+            }
+        }
+    }
+
+    num_errors
 }

@@ -1,261 +1,172 @@
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
+
+#[cfg(unix)]
+use std::os;
 
 use pmv::move_files;
 
-fn setup(id: &str) {
-    let _ = fs::create_dir(Path::new("temp"));
-    let _ = fs::remove_dir_all(Path::new(&format!("temp/{}", id)));
-    for dir1 in ["foo", "bar", "baz"].iter() {
-        for dir2 in ["foo", "bar", "baz"].iter() {
-            let _ = fs::create_dir_all(Path::new(&format!("temp/{}/{}/{}", id, dir1, dir2)));
-            for fname in ["foo", "bar", "baz"].iter() {
-                let path: String = format!("temp/{}/{}/{}/{}", id, dir1, dir2, fname);
-                fs::write(Path::new(&path), path.as_bytes()).unwrap();
-            }
-        }
+fn prepare_test(id: &str) -> Result<(), io::Error> {
+    if !Path::new("temp").exists() {
+        fs::create_dir("temp").unwrap();
     }
-
-    #[cfg(unix)]
-    fn setup_for_unix(id: &str) {
-        let target = PathBuf::from(&format!("temp/{}/baz/baz/baz", id));
-        let target = target.canonicalize().unwrap();
-        let link = format!("temp/{}/symlink2file", id);
-        std::os::unix::fs::symlink(target, Path::new(&link)).unwrap();
-
-        let target = PathBuf::from(&format!("temp/{}/baz/baz", id));
-        let target = target.canonicalize().unwrap();
-        let link = format!("temp/{}/symlink2dir", id);
-        std::os::unix::fs::symlink(target, Path::new(&link)).unwrap();
+    let path = format!("temp/{}", id);
+    if Path::new(&path).exists() {
+        fs::remove_dir_all(Path::new(&path)).unwrap();
     }
-    #[cfg(unix)]
-    setup_for_unix(id);
+    fs::create_dir(Path::new(&path))
+}
+
+fn mkpathstring(id: &str, name: &str) -> String {
+    format!("temp/{}/{}", id, name)
+}
+
+fn mkpathbuf(id: &str, name: &str) -> PathBuf {
+    let path = mkpathstring(id, name);
+    PathBuf::from(&path)
+}
+
+fn mkfile(id: &str, name: &str) -> Result<(), io::Error> {
+    let path = mkpathstring(id, name);
+    fs::write(Path::new(&path), &path)
+}
+
+fn mkdir(id: &str, name: &str) -> Result<(), io::Error> {
+    let path = mkpathstring(id, name);
+    fs::create_dir(Path::new(&path))
+}
+
+#[cfg(unix)]
+fn mklink(id: &str, src: &str, dest: &str) -> Result<(), io::Error> {
+    let dest2 = mkpathstring(id, dest);
+    let src2 = mkpathstring(id, src);
+    os::unix::fs::symlink(src2, dest2)
+}
+
+fn content_of(id: &str, name: &str) -> String {
+    let path = mkpathstring(id, name);
+    fs::read_to_string(Path::new(&path)).unwrap()
 }
 
 #[test]
 fn ok() {
-    let id = "ok";
-    setup(id);
-
-    let sources: Vec<PathBuf> = vec![
-        format!("temp/{}/foo/foo/foo", id),
-        format!("temp/{}/foo/bar/foo", id),
-        format!("temp/{}/foo/baz/foo", id),
-    ]
-    .iter()
-    .map(PathBuf::from)
-    .collect();
-    let dests: Vec<String> = vec![
-        format!("temp/{}/foo/foo/zzz", id),
-        format!("temp/{}/foo/bar/zzz", id),
-        format!("temp/{}/foo/baz/zzz", id),
-    ]
-    .iter()
-    .map(|x| String::from(x))
-    .collect();
-    let dry_run = false;
-    let num_errors = move_files(&sources, &dests, dry_run, false, None);
-
-    assert!(!sources[0].exists());
-    assert!(!sources[1].exists());
-    assert!(!sources[2].exists());
-    assert!(Path::new(&dests[0]).exists());
-    assert!(Path::new(&dests[1]).exists());
-    assert!(Path::new(&dests[2]).exists());
-    assert_eq!(
-        fs::read_to_string(Path::new(&dests[0])).unwrap(),
-        sources[0].to_str().unwrap(),
-    );
-    assert_eq!(
-        fs::read_to_string(Path::new(&dests[1])).unwrap(),
-        sources[1].to_str().unwrap(),
-    );
-    assert_eq!(
-        fs::read_to_string(Path::new(&dests[2])).unwrap(),
-        sources[2].to_str().unwrap(),
-    );
-
-    assert_eq!(num_errors, 0);
+    // Essentially same as "file_to_file"
 }
 
 #[test]
 fn dry_run() {
     let id = "dry_run";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![
-        format!("temp/{}/foo/foo/foo", id),
-        format!("temp/{}/foo/bar/foo", id),
-        format!("temp/{}/foo/baz/foo", id),
-    ]
-    .iter()
-    .map(PathBuf::from)
-    .collect();
-    let dests: Vec<String> = vec![
-        format!("temp/{}/foo/foo/zzz", id),
-        format!("temp/{}/foo/bar/zzz", id),
-        format!("temp/{}/foo/baz/zzz", id),
-    ]
-    .iter()
-    .map(|x| String::from(x))
-    .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mkfile(id, "f2").unwrap();
+
     let dry_run = true;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "f2")];
     let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
-    assert!(sources[0].exists());
-    assert!(sources[1].exists());
-    assert!(sources[2].exists());
-    assert!(!Path::new(&dests[0]).exists());
-    assert!(!Path::new(&dests[1]).exists());
-    assert!(!Path::new(&dests[2]).exists());
-
     assert_eq!(num_errors, 0);
+    assert!(mkpathbuf(id, "f1").exists());
+    assert!(mkpathbuf(id, "f2").exists());
+    assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
+    assert_eq!(content_of(id, "f2"), format!("temp/{}/f2", id));
 }
 
 #[test]
 fn invalid_dest() {
     let id = "invalid_dest";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![
-        format!("temp/{}/foo/foo/foo", id),
-        format!("temp/{}/foo/bar/foo", id),
-        format!("temp/{}/foo/baz/foo", id),
-    ]
-    .iter()
-    .map(PathBuf::from)
-    .collect();
-    let dests: Vec<String> = vec![
-        format!("temp/{}/foo/foo/\0", id),
-        format!("temp/{}/foo/bar/\0", id),
-        format!("temp/{}/foo/baz/\0", id),
-    ]
-    .iter()
-    .map(|x| String::from(x))
-    .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+
     let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "\0")];
     let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
-    assert!(sources[0].exists());
-    assert!(sources[1].exists());
-    assert!(sources[2].exists());
-    assert!(!Path::new(&dests[0]).exists());
-    assert!(!Path::new(&dests[1]).exists());
-    assert!(!Path::new(&dests[2]).exists());
-
-    assert_eq!(num_errors, 3);
+    assert_eq!(num_errors, 1);
+    assert!(mkpathbuf(id, "f1").exists());
+    assert!(!mkpathbuf(id, "\0").exists());
+    assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
 }
 
 #[test]
 fn file_to_file() {
     let id = "file_to_file";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
-        .iter()
-        .map(PathBuf::from)
-        .collect();
-    let dests: Vec<String> = vec![format!("temp/{}/foo/foo/bar", id)]
-        .iter()
-        .map(|x| String::from(x))
-        .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mkfile(id, "f2").unwrap();
+
     let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "f2")];
     let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
-    assert!(!sources[0].exists());
-    assert!(Path::new(&dests[0]).exists());
-    assert_eq!(
-        fs::read_to_string(Path::new(&dests[0])).unwrap(),
-        format!("temp/{}/foo/foo/foo", id)
-    );
-
     assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "f1").exists());
+    assert!(mkpathbuf(id, "f2").exists());
+    assert_eq!(content_of(id, "f2"), format!("temp/{}/f1", id));
 }
 
 #[test]
 fn file_to_dir() {
     let id = "file_to_dir";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
-        .iter()
-        .map(PathBuf::from)
-        .collect();
-    let dests: Vec<String> = vec![format!("temp/{}/foo/bar", id)]
-        .iter()
-        .map(|x| String::from(x))
-        .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mkdir(id, "d1").unwrap();
+
     let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "d1")];
     let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
-    let expected_dest = format!("temp/{}/foo/bar/foo", id);
-    assert!(!sources[0].exists());
-    assert!(Path::new(&expected_dest).exists());
-    assert_eq!(
-        fs::read_to_string(Path::new(&expected_dest)).unwrap(),
-        format!("temp/{}/foo/foo/foo", id)
-    );
-
     assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "f1").exists());
+    assert!(mkpathbuf(id, "d1/f1").exists());
+    assert_eq!(content_of(id, "d1/f1"), format!("temp/{}/f1", id));
 }
 
 #[cfg(unix)]
 #[test]
 fn file_to_symlink2file() {
     let id = "file_to_symlink2file";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
-        .iter()
-        .map(PathBuf::from)
-        .collect();
-    let dests: Vec<String> = vec![format!("temp/{}/symlink2file", id)]
-        .iter()
-        .map(|x| String::from(x))
-        .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+
     let dry_run = false;
-    let num_errors = move_files(&sources, &dests, dry_run, true, None);
-
-    assert!(!sources[0].exists());
-    assert!(Path::new(&dests[0]).exists());
-    assert_eq!(
-        fs::read_to_string(Path::new(&dests[0])).unwrap(),
-        format!("temp/{}/foo/foo/foo", id)
-    );
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
     assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "f1").exists());
+    assert!(mkpathbuf(id, "lf1").exists());
+    assert_eq!(content_of(id, "lf1"), format!("temp/{}/f1", id));
 }
 
 #[cfg(unix)]
 #[test]
 fn file_to_symlink2dir() {
     let id = "file_to_symlink2dir";
-    setup(id);
 
-    let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
-        .iter()
-        .map(PathBuf::from)
-        .collect();
-    let dests: Vec<String> = vec![format!("temp/{}/symlink2dir", id)]
-        .iter()
-        .map(|x| String::from(x))
-        .collect();
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "lf1").unwrap();
+
     let dry_run = false;
-    let num_errors = move_files(&sources, &dests, dry_run, true, None);
-
-    let expected_dest1 = format!("temp/{}/symlink2dir/foo", id);
-    let expected_dest2 = format!("temp/{}/baz/baz/foo", id);
-    assert!(!sources[0].exists());
-    assert!(Path::new(&expected_dest1).exists());
-    assert!(Path::new(&expected_dest2).exists());
-    assert_eq!(
-        fs::read_to_string(Path::new(&expected_dest1)).unwrap(),
-        format!("temp/{}/foo/foo/foo", id)
-    );
-    assert_eq!(
-        fs::read_to_string(Path::new(&expected_dest2)).unwrap(),
-        format!("temp/{}/foo/foo/foo", id)
-    );
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
     assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "f1").exists());
+    assert!(mkpathbuf(id, "lf1").exists());
+    assert_eq!(content_of(id, "lf1"), format!("temp/{}/f1", id));
 }

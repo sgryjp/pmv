@@ -1,14 +1,14 @@
 use pmv::fnmatch;
 
 #[test]
-fn test_fnmatch_no_special() {
+fn no_special() {
     assert_eq!(fnmatch("fooba", "foobar"), None);
     assert_eq!(fnmatch("foobar", "foobar"), Some(vec![]));
     assert_eq!(fnmatch("foobar!", "foobar"), None);
 }
 
 #[test]
-fn test_fnmatch_question_single() {
+fn question_single() {
     assert_eq!(fnmatch("?oobar", "foobar"), Some(vec![String::from("f")]));
     assert_eq!(fnmatch("fooba?", "foobar"), Some(vec![String::from("r")]));
     assert_eq!(fnmatch("foobar?", "foobar"), None);
@@ -16,7 +16,7 @@ fn test_fnmatch_question_single() {
 }
 
 #[test]
-fn test_fnmatch_question_multiple() {
+fn question_multiple() {
     assert_eq!(
         fnmatch("?oo?ar", "foobar"),
         Some(vec![String::from("f"), String::from("b")])
@@ -29,7 +29,7 @@ fn test_fnmatch_question_multiple() {
 }
 
 #[test]
-fn test_fnmatch_star() {
+fn star() {
     assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
     assert_eq!(fnmatch("foo*", "foobar"), Some(vec![String::from("bar")]));
     assert_eq!(fnmatch("*bar", "foobar"), Some(vec![String::from("foo")]));
@@ -39,7 +39,7 @@ fn test_fnmatch_star() {
 }
 
 #[test]
-fn test_fnmatch_star_star() {
+fn star_star() {
     assert_eq!(
         fnmatch("f**r", "foobar"),
         Some(vec![String::from(""), String::from("ooba")])
@@ -47,7 +47,7 @@ fn test_fnmatch_star_star() {
 }
 
 #[test]
-fn test_fnmatch_star_questions() {
+fn star_questions() {
     assert_eq!(
         fnmatch("fo*??r", "foobar"),
         Some(vec![
@@ -73,6 +73,6 @@ fn test_fnmatch_star_questions() {
 }
 
 #[test]
-fn test_fnmatch_star_question_star() {
+fn star_question_star() {
     assert_eq!(fnmatch("f*?*r", "foobar"), None);
 }

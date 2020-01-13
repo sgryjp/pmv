@@ -29,21 +29,21 @@ fn default_substrs() -> Vec<String> {
 }
 
 #[test]
-fn test_resolve_dest_empty() {
+fn dest_empty() {
     let dest = "";
     let substrs = default_substrs();
     assert_eq!(resolve(dest, &substrs[..]), String::from(""));
 }
 
 #[test]
-fn test_resolve_dest_no_vars() {
+fn dest_no_vars() {
     let dest = "/foo/bar";
     let substrs = default_substrs();
     assert_eq!(resolve(dest, &substrs[..]), format!("{}foo{}bar", SEP, SEP));
 }
 
 #[test]
-fn test_resolve_dest_sharp() {
+fn dest_sharp() {
     let dest = "/foo/bar/#";
     let substrs = default_substrs();
     assert_eq!(
@@ -53,7 +53,7 @@ fn test_resolve_dest_sharp() {
 }
 
 #[test]
-fn test_resolve_dest_sharp_0() {
+fn dest_sharp_0() {
     let dest = "/foo/bar/#0";
     let substrs = default_substrs();
     assert_eq!(
@@ -63,7 +63,7 @@ fn test_resolve_dest_sharp_0() {
 }
 
 #[test]
-fn test_resolve_dest_sharp_1() {
+fn dest_sharp_1() {
     let dest = "/foo/bar/#1";
     let substrs = default_substrs();
     assert_eq!(
@@ -73,7 +73,7 @@ fn test_resolve_dest_sharp_1() {
 }
 
 #[test]
-fn test_resolve_dest_sharp_9() {
+fn dest_sharp_9() {
     let dest = "/foo/bar/#9";
     let substrs = default_substrs();
     assert_eq!(
@@ -83,7 +83,7 @@ fn test_resolve_dest_sharp_9() {
 }
 
 #[test]
-fn test_resolve_dest_sharp_colon() {
+fn dest_sharp_colon() {
     let dest = "/foo/bar/#:";
     let substrs = default_substrs();
     assert_eq!(
@@ -93,7 +93,7 @@ fn test_resolve_dest_sharp_colon() {
 }
 
 #[test]
-fn test_resolve_dest_sharp_10() {
+fn dest_sharp_10() {
     let dest = "/foo/bar/#10";
     let substrs = default_substrs();
     assert_eq!(
@@ -103,7 +103,7 @@ fn test_resolve_dest_sharp_10() {
 }
 
 #[test]
-fn test_resolve_dest_var_in_dirname() {
+fn dest_var_in_dirname() {
     let dest = "/foo/#1/baz";
     let substrs = default_substrs();
     assert_eq!(
@@ -113,7 +113,7 @@ fn test_resolve_dest_var_in_dirname() {
 }
 
 #[test]
-fn test_resolve_dest_var_in_filename() {
+fn dest_var_in_filename() {
     let dest = "/foo/bar/baz_#1.txt";
     let substrs = default_substrs();
     assert_eq!(
@@ -123,7 +123,7 @@ fn test_resolve_dest_var_in_filename() {
 }
 
 #[test]
-fn test_resolve_dest_var_multi_usage() {
+fn dest_var_multi_usage() {
     let dest = "/foo/#3/#1#2.#9";
     let substrs = default_substrs();
     assert_eq!(
@@ -133,7 +133,7 @@ fn test_resolve_dest_var_multi_usage() {
 }
 
 #[test]
-fn test_resolve_dest_var_index_out_of_range() {
+fn dest_var_index_out_of_range() {
     let dest = "/foo/#3/#1#2.txt";
     let substrs = vec!["v1"]
         .iter()
@@ -146,7 +146,7 @@ fn test_resolve_dest_var_index_out_of_range() {
 }
 
 #[test]
-fn test_resolve_dest_slash_substitution() {
+fn dest_slash_substitution() {
     let dest = "foo\\bar/baz";
     let substrs = default_substrs();
     assert_eq!(
@@ -156,7 +156,7 @@ fn test_resolve_dest_slash_substitution() {
 }
 
 #[test]
-fn test_resolve_substrs_empty() {
+fn substrs_empty() {
     let dest = "foo/bar/baz";
     let substrs: Vec<String> = Vec::new();
     assert_eq!(
@@ -166,7 +166,7 @@ fn test_resolve_substrs_empty() {
 }
 
 #[test]
-fn test_resolve_substrs_one() {
+fn substrs_one() {
     let dest = "foo/#1/baz";
     let substrs = vec!["v1"]
         .iter()
@@ -179,7 +179,7 @@ fn test_resolve_substrs_one() {
 }
 
 #[test]
-fn test_resolve_substrs_two() {
+fn substrs_two() {
     let dest = "foo/#1/#2";
     let substrs = vec!["v1", "v2"]
         .iter()
@@ -192,7 +192,7 @@ fn test_resolve_substrs_two() {
 }
 
 #[test]
-fn test_resolve_substrs_invalid_char() {
+fn substrs_invalid_char() {
     let dest = "foo/#1/#2";
     let substrs = vec!["/", "/"]
         .iter()

@@ -18,18 +18,18 @@ fn setup(id: &str) {
 }
 
 #[test]
-fn test_walk_no_specials() {
-    setup("test_walk_no_specials");
-    let matches = walk(Path::new("temp/test_walk_no_specials"), "foo/bar/baz").unwrap();
+fn no_specials() {
+    setup("no_specials");
+    let matches = walk(Path::new("temp/no_specials"), "foo/bar/baz").unwrap();
     assert_eq!(matches.len(), 1);
-    assert_eq!(matches[0].0.path(), Path::new("temp/test_walk_no_specials/foo/bar/baz"));
+    assert_eq!(matches[0].0.path(), Path::new("temp/no_specials/foo/bar/baz"));
     assert_eq!(matches[0].1, Vec::<String>::new());
 }
 
 #[test]
-fn test_walk_question() {
-    setup("test_walk_question");
-    let mut matches = walk(Path::new("temp/test_walk_question"), "ba?/ba?/ba?").unwrap();
+fn question() {
+    setup("question");
+    let mut matches = walk(Path::new("temp/question"), "ba?/ba?/ba?").unwrap();
     assert_eq!(matches.len(), 8);
     matches.sort_by(|a, b| a.0.path().cmp(&b.0.path()));
 
@@ -37,14 +37,14 @@ fn test_walk_question() {
     assert_eq!(
         paths,
         vec![
-            Path::new("temp/test_walk_question/bar/bar/bar"),
-            Path::new("temp/test_walk_question/bar/bar/baz"),
-            Path::new("temp/test_walk_question/bar/baz/bar"),
-            Path::new("temp/test_walk_question/bar/baz/baz"),
-            Path::new("temp/test_walk_question/baz/bar/bar"),
-            Path::new("temp/test_walk_question/baz/bar/baz"),
-            Path::new("temp/test_walk_question/baz/baz/bar"),
-            Path::new("temp/test_walk_question/baz/baz/baz"),
+            Path::new("temp/question/bar/bar/bar"),
+            Path::new("temp/question/bar/bar/baz"),
+            Path::new("temp/question/bar/baz/bar"),
+            Path::new("temp/question/bar/baz/baz"),
+            Path::new("temp/question/baz/bar/bar"),
+            Path::new("temp/question/baz/bar/baz"),
+            Path::new("temp/question/baz/baz/bar"),
+            Path::new("temp/question/baz/baz/baz"),
         ]
     );
 
@@ -71,9 +71,9 @@ fn test_walk_question() {
 }
 
 #[test]
-fn test_walk_star() {
-    setup("test_walk_star");
-    let mut matches = walk(Path::new("temp/test_walk_star"), "b*/b*/b*").unwrap();
+fn star() {
+    setup("star");
+    let mut matches = walk(Path::new("temp/star"), "b*/b*/b*").unwrap();
     assert_eq!(matches.len(), 8);
     matches.sort_by(|a, b| a.0.path().cmp(&b.0.path()));
 
@@ -81,14 +81,14 @@ fn test_walk_star() {
     assert_eq!(
         paths,
         vec![
-            Path::new("temp/test_walk_star/bar/bar/bar"),
-            Path::new("temp/test_walk_star/bar/bar/baz"),
-            Path::new("temp/test_walk_star/bar/baz/bar"),
-            Path::new("temp/test_walk_star/bar/baz/baz"),
-            Path::new("temp/test_walk_star/baz/bar/bar"),
-            Path::new("temp/test_walk_star/baz/bar/baz"),
-            Path::new("temp/test_walk_star/baz/baz/bar"),
-            Path::new("temp/test_walk_star/baz/baz/baz"),
+            Path::new("temp/star/bar/bar/bar"),
+            Path::new("temp/star/bar/bar/baz"),
+            Path::new("temp/star/bar/baz/bar"),
+            Path::new("temp/star/bar/baz/baz"),
+            Path::new("temp/star/baz/bar/bar"),
+            Path::new("temp/star/baz/bar/baz"),
+            Path::new("temp/star/baz/baz/bar"),
+            Path::new("temp/star/baz/baz/baz"),
         ]
     );
 

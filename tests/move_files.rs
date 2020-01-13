@@ -33,8 +33,8 @@ fn setup(id: &str) {
 }
 
 #[test]
-fn test_move_files_ok() {
-    let id = "test_move_files_ok";
+fn ok() {
+    let id = "ok";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![
@@ -79,8 +79,8 @@ fn test_move_files_ok() {
 }
 
 #[test]
-fn test_move_files_dry_run() {
-    let id = "test_move_files_dry_run";
+fn dry_run() {
+    let id = "dry_run";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![
@@ -113,8 +113,8 @@ fn test_move_files_dry_run() {
 }
 
 #[test]
-fn test_move_files_invalid_dest() {
-    let id = "test_move_files_invalid_dest";
+fn invalid_dest() {
+    let id = "invalid_dest";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![
@@ -147,8 +147,8 @@ fn test_move_files_invalid_dest() {
 }
 
 #[test]
-fn test_move_files_file_to_file() {
-    let id = "test_move_files_file_to_file";
+fn file_to_file() {
+    let id = "file_to_file";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
@@ -173,8 +173,8 @@ fn test_move_files_file_to_file() {
 }
 
 #[test]
-fn test_move_files_file_to_dir() {
-    let id = "test_move_files_file_to_dir";
+fn file_to_dir() {
+    let id = "file_to_dir";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
@@ -201,8 +201,8 @@ fn test_move_files_file_to_dir() {
 
 #[cfg(unix)]
 #[test]
-fn test_move_files_file_to_symlink2file() {
-    let id = "test_move_files_file_to_symlink2file";
+fn file_to_symlink2file() {
+    let id = "file_to_symlink2file";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]
@@ -228,8 +228,8 @@ fn test_move_files_file_to_symlink2file() {
 
 #[cfg(unix)]
 #[test]
-fn test_move_files_file_to_symlink2dir() {
-    let id = "test_move_files_file_to_symlink2dir";
+fn file_to_symlink2dir() {
+    let id = "file_to_symlink2dir";
     setup(id);
 
     let sources: Vec<PathBuf> = vec![format!("temp/{}/foo/foo/foo", id)]

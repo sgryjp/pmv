@@ -1,6 +1,6 @@
 language: rust
 env:
-  - RUST_STACKTRACE=1
+  - RUST_BACKTRACE=1
 rust:
   - 1.36.0
   - stable

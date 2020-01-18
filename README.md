@@ -1,6 +1,6 @@
 # pmv
 
-[![Build Status](https://travis-ci.org/sgryjp/pmv.svg?branch=master)](https://travis-ci.org/sgryjp/pmv)
+[![Build Status](https://img.shields.io/github/workflow/status/sgryjp/pmv/Build)](https://github.com/sgryjp/pmv/actions?query=workflow%3ABuild)
 [![Latest version](https://img.shields.io/crates/v/pmv.svg)](https://crates.io/crates/pmv)
 ![GitHub](https://img.shields.io/github/license/sgryjp/pmv)
 

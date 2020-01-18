@@ -246,3 +246,177 @@ fn dir_to_symlink2dir() {
     assert!(mkpathbuf(id, "d2/d1").is_dir());
     assert!(mkpathbuf(id, "ld2/d1").is_dir());
 }
+
+#[cfg(unix)]
+#[test]
+fn symlink2file_to_file() {
+    let id = "symlink2file_to_file";
+
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+    mkfile(id, "f2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "f2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "lf1").is_file());
+    assert!(mkpathbuf(id, "f2").exists());
+    assert_eq!(content_of(id, "f2"), format!("temp/{}/f1", id));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2file_to_dir() {
+    let id = "symlink2file_to_dir";
+
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+    mkdir(id, "d1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "d1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "lf1").exists());
+    assert!(mkpathbuf(id, "d1/lf1").exists());
+    assert_eq!(content_of(id, "d1/lf1"), format!("temp/{}/f1", id));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2file_to_symlink2file() {
+    let id = "symlink2file_to_symlink2file";
+
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+    mkfile(id, "f2").unwrap();
+    mklink(id, "f2", "lf2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "lf2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "lf1").exists());
+    assert!(mkpathbuf(id, "lf2").exists());
+    assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
+    assert_eq!(content_of(id, "f2"), format!("temp/{}/f2", id));
+    assert_eq!(content_of(id, "lf2"), format!("temp/{}/f1", id));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2file_to_symlink2dir() {
+    let id = "symlink2file_to_symlink2dir";
+
+    prepare_test(id).unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "lf1").exists());
+    assert!(mkpathbuf(id, "d1/lf1").is_file());
+    assert!(mkpathbuf(id, "ld1/lf1").is_file());
+    assert_eq!(content_of(id, "ld1/lf1"), format!("temp/{}/f1", id));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2dir_to_file() {
+    let id = "symlink2dir_to_file";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
+    mkfile(id, "f1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "f1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 1);
+    assert!(mkpathbuf(id, "ld1").exists());
+    assert!(mkpathbuf(id, "f1").exists());
+    assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2dir_to_dir() {
+    let id = "symlink2dir_to_dir";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
+    mkdir(id, "d2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "d2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "ld1").exists());
+    assert!(mkpathbuf(id, "d2").exists());
+    assert!(mkpathbuf(id, "d2/ld1").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2dir_to_symlink2file() {
+    let id = "symlink2dir_to_symlink2file";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 1);
+    assert!(mkpathbuf(id, "ld1").exists());
+    assert!(mkpathbuf(id, "lf1").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink2dir_to_symlink2dir() {
+    let id = "symlink2dir_to_symlink2dir";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
+    mkdir(id, "d2").unwrap();
+    mklink(id, "d2", "ld2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "ld1").exists());
+    assert!(mkpathbuf(id, "d2/ld1").exists());
+    assert!(mkpathbuf(id, "ld2/ld1").exists());
+}

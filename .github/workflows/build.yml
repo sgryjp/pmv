@@ -1,11 +1,15 @@
-name: Rust
+name: Build
 
-on: [push]
+on:
+  push:
+    branch: master
+  pull_request:
+    branch: master
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows, macos]
 
     steps:
     - uses: actions/checkout@v1

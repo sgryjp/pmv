@@ -39,9 +39,10 @@ fn mkdir(id: &str, name: &str) -> Result<(), io::Error> {
 
 #[cfg(unix)]
 fn mklink(id: &str, src: &str, dest: &str) -> Result<(), io::Error> {
-    let dest2 = mkpathstring(id, dest);
-    let src2 = mkpathstring(id, src);
-    os::unix::fs::symlink(src2, dest2)
+    let dest = mkpathstring(id, dest);
+    let src = PathBuf::from(mkpathstring(id, src));
+    let src = src.canonicalize().unwrap();
+    os::unix::fs::symlink(src, dest)
 }
 
 fn content_of(id: &str, name: &str) -> String {
@@ -153,17 +154,18 @@ fn file_to_symlink2dir() {
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
     mkdir(id, "d1").unwrap();
-    mklink(id, "d1", "lf1").unwrap();
+    mklink(id, "d1", "ld1").unwrap();
 
     let dry_run = false;
     let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-    let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
     let num_errors = move_files(&sources, &dests, dry_run, false, None);
 
     assert_eq!(num_errors, 0);
     assert!(!mkpathbuf(id, "f1").exists());
-    assert!(mkpathbuf(id, "lf1").exists());
-    assert_eq!(content_of(id, "lf1"), format!("temp/{}/f1", id));
+    assert!(mkpathbuf(id, "d1/f1").is_file());
+    assert!(mkpathbuf(id, "ld1/f1").is_file());
+    assert_eq!(content_of(id, "ld1/f1"), format!("temp/{}/f1", id));
 }
 
 #[test]
@@ -202,4 +204,45 @@ fn dir_to_dir() {
     assert!(!mkpathbuf(id, "d1").exists());
     assert!(mkpathbuf(id, "d2").exists());
     assert!(mkpathbuf(id, "d2/d1").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn dir_to_symlink2file() {
+    let id = "dir_to_symlink2file";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mkfile(id, "f1").unwrap();
+    mklink(id, "f1", "lf1").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 1);
+    assert!(mkpathbuf(id, "d1").is_dir());
+    assert!(mkpathbuf(id, "f1").is_file());
+}
+
+#[cfg(unix)]
+#[test]
+fn dir_to_symlink2dir() {
+    let id = "dir_to_symlink2dir";
+
+    prepare_test(id).unwrap();
+    mkdir(id, "d1").unwrap();
+    mkdir(id, "d2").unwrap();
+    mklink(id, "d2", "ld2").unwrap();
+
+    let dry_run = false;
+    let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
+    let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
+    let num_errors = move_files(&sources, &dests, dry_run, false, None);
+
+    assert_eq!(num_errors, 0);
+    assert!(!mkpathbuf(id, "d1").exists());
+    assert!(mkpathbuf(id, "d2/d1").is_dir());
+    assert!(mkpathbuf(id, "ld2/d1").is_dir());
 }

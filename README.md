@@ -1,6 +1,8 @@
 # pmv
 
 [![Build Status](https://travis-ci.org/sgryjp/pmv.svg?branch=master)](https://travis-ci.org/sgryjp/pmv)
+[![Latest version](https://img.shields.io/crates/v/pmv.svg)](https://crates.io/crates/pmv)
+![GitHub](https://img.shields.io/github/license/sgryjp/pmv)
 
 A command line tool to move multiple files at once, using wildcard patterns.
 

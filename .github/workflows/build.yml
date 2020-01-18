@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
       with:
-        ref: $GITHUB_REF
+        ref: ${{ GITHUB_REF }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests

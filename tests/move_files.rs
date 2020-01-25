@@ -8,9 +8,7 @@ use std::os;
 use pmv::move_files;
 
 fn prepare_test(id: &str) -> Result<(), io::Error> {
-    if !Path::new("temp").exists() {
-        fs::create_dir("temp").unwrap();
-    }
+    let _ = fs::create_dir("temp");
     let path = format!("temp/{}", id);
     if Path::new(&path).exists() {
         fs::remove_dir_all(Path::new(&path)).unwrap();

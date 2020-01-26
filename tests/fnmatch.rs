@@ -29,6 +29,11 @@ fn question_multiple() {
 }
 
 #[test]
+fn question_non_ascii() {
+    assert_eq!(fnmatch("I ? NY", "I ♡ NY"), Some(vec![String::from("♡")]));
+}
+
+#[test]
 fn star() {
     assert_eq!(fnmatch("f*r", "foobar"), Some(vec![String::from("ooba")]));
     assert_eq!(fnmatch("foo*", "foobar"), Some(vec![String::from("bar")]));

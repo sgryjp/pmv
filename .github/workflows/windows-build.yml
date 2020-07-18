@@ -14,7 +14,13 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
+  test:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        ref: ${{ github.ref }}
     - name: Run tests
       run: cargo test --verbose
       env:

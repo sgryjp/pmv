@@ -72,7 +72,7 @@ pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                 i += 1;
                 j = jj;
             }
-        } else if j < name.len() && pattern[i] == name[j] {
+        } else if j < name.len() && match_chars(pattern[i], name[j]) {
             i += 1;
             j += 1;
         } else {
@@ -109,6 +109,26 @@ fn strcspn(s: &[char], i: usize, reject: char) -> usize {
         j += 1;
     }
     s.len() - i
+}
+
+fn match_chars(a: char, b: char) -> bool {
+    if cfg!(windows) {
+        let offset = 'a' as u32 - 'A' as u32;
+
+        let a = match a {
+            'A'..='Z' => std::char::from_u32(a as u32 + offset).unwrap(),
+            _ => a,
+        };
+
+        let b = match b {
+            'A'..='Z' => std::char::from_u32(b as u32 + offset).unwrap(),
+            _ => b,
+        };
+
+        a == b
+    } else {
+        a == b
+    }
 }
 
 #[cfg(test)]

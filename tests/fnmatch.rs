@@ -8,6 +8,16 @@ fn no_special() {
 }
 
 #[test]
+fn case_sensitivity() {
+    let actual = fnmatch("Abc", "abC");
+    #[cfg(windows)]
+    let expected: Option<Vec<String>> = Some(Vec::new());
+    #[cfg(unix)]
+    let expected = None;
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn question_single() {
     assert_eq!(fnmatch("?oobar", "foobar"), Some(vec![String::from("f")]));
     assert_eq!(fnmatch("fooba?", "foobar"), Some(vec![String::from("r")]));

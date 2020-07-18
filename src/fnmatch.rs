@@ -70,7 +70,7 @@ pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
                 i += 1;
                 j = jj;
             }
-        } else if j < name.len() && pattern[i] == name[j] {
+        } else if j < name.len() && match_chars(pattern[i], name[j]) {
             i += 1;
             j += 1;
         } else {
@@ -107,6 +107,22 @@ fn strcspn(s: &[u8], i: usize, reject: u8) -> usize {
         j += 1;
     }
     s.len() - i
+}
+
+fn match_chars(a: u8, b: u8) -> bool {
+    #[cfg(windows)]
+    let a = match a {
+        b'A'..=b'Z' => a - b'A' + b'a',
+        _ => a,
+    };
+
+    #[cfg(windows)]
+    let b = match b {
+        b'A'..=b'Z' => b - b'A' + b'a',
+        _ => b,
+    };
+
+    a == b
 }
 
 #[cfg(test)]

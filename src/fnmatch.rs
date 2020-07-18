@@ -111,16 +111,16 @@ fn strcspn(s: &[char], i: usize, reject: char) -> usize {
     s.len() - i
 }
 
-fn match_chars(a: u8, b: u8) -> bool {
+fn match_chars(a: char, b: char) -> bool {
     #[cfg(windows)]
     let a = match a {
-        b'A'..=b'Z' => a - b'A' + b'a',
+        'A'..='Z' => a - 'A' + 'a',
         _ => a,
     };
 
     #[cfg(windows)]
     let b = match b {
-        b'A'..=b'Z' => b - b'A' + b'a',
+        'A'..='Z' => b - 'A' + 'a',
         _ => b,
     };
 

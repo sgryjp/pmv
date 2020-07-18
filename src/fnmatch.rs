@@ -13,38 +13,40 @@
 /// assert_eq!(fnmatch("f*??r", "blah"), None);
 /// ```
 pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
-    let pattern = pattern.as_bytes();
-    let name = name.as_bytes();
+    let pattern: Vec<char> = pattern.chars().collect();
+    let pattern: &[char] = &pattern[..];
+    let name: Vec<char> = name.chars().collect();
+    let name: &[char] = &name[..];
     let mut i: usize = 0;
     let mut j: usize = 0;
     let mut matches: Vec<String> = Vec::new();
     loop {
-        if pattern[i] == b'?' {
+        if pattern[i] == '?' {
             if name.len() <= j {
                 return None; // no more chars available for this '?'
             }
 
             // Match one character
-            matches.push(String::from_utf8(name[j..=j].to_vec()).unwrap());
+            matches.push(name[j..=j].iter().collect());
             i += 1;
             j += 1;
-        } else if pattern[i] == b'*' {
+        } else if pattern[i] == '*' {
             if pattern.len() <= i + 1 {
                 // Match all the remainings
-                matches.push(String::from_utf8(name[j..].to_vec()).unwrap());
+                matches.push(name[j..].iter().collect());
                 i += 1;
                 j = name.len();
-            } else if pattern[i + 1] == b'*' {
+            } else if pattern[i + 1] == '*' {
                 // Match an empty string (consume nothing)
                 i += 1;
                 matches.push(String::new());
-            } else if pattern[i + 1] == b'?' {
+            } else if pattern[i + 1] == '?' {
                 // Count how many question marks are there
-                let num_questions = 1 + strspn(pattern, i + 2, b'?');
+                let num_questions = 1 + strspn(pattern, i + 2, '?');
                 let ii = i + 1 + num_questions;
                 let matched_len = if ii < pattern.len() {
                     let term = pattern[ii];
-                    if term == b'*' {
+                    if term == '*' {
                         return None; // Patterns like `*?*` are ambiguous
                     }
                     strcspn(name, j, term)
@@ -57,16 +59,16 @@ pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
 
                 // Keep matched parts
                 let substr_for_star = &name[j..(j + matched_len - num_questions)];
-                matches.push(String::from_utf8(substr_for_star.to_vec()).unwrap());
+                matches.push(substr_for_star.iter().collect());
                 for jj in j + substr_for_star.len()..j + matched_len {
-                    matches.push(String::from_utf8(name[jj..=jj].to_vec()).unwrap());
+                    matches.push(name[jj..=jj].iter().collect());
                 }
                 i = ii;
                 j += matched_len;
             } else {
                 debug_assert!(i + 1 < pattern.len());
                 let jj = j + strcspn(name, j, pattern[i + 1]);
-                matches.push(String::from_utf8(name[j..jj].to_vec()).unwrap());
+                matches.push(name[j..jj].iter().collect());
                 i += 1;
                 j = jj;
             }
@@ -87,7 +89,7 @@ pub fn fnmatch(pattern: &str, name: &str) -> Option<Vec<String>> {
     }
 }
 
-fn strspn(s: &[u8], i: usize, accept: u8) -> usize {
+fn strspn(s: &[char], i: usize, accept: char) -> usize {
     let mut j = i;
     while j < s.len() {
         if accept != s[j] {
@@ -98,7 +100,7 @@ fn strspn(s: &[u8], i: usize, accept: u8) -> usize {
     s.len() - i
 }
 
-fn strcspn(s: &[u8], i: usize, reject: u8) -> usize {
+fn strcspn(s: &[char], i: usize, reject: char) -> usize {
     let mut j = i;
     while j < s.len() {
         if reject == s[j] {
@@ -131,15 +133,17 @@ mod tests {
 
     #[test]
     fn test_strspn() {
-        assert_eq!(strspn(b"foobar", 0, b'o'), 0);
-        assert_eq!(strspn(b"foobar", 1, b'o'), 2);
-        assert_eq!(strspn(b"foobar", 5, b'r'), 1);
+        let s: Vec<char> = "foobar".chars().collect();
+        assert_eq!(strspn(&s[..], 0, 'o'), 0);
+        assert_eq!(strspn(&s[..], 1, 'o'), 2);
+        assert_eq!(strspn(&s[..], 5, 'r'), 1);
     }
 
     #[test]
     fn test_strcspn() {
-        assert_eq!(strcspn(b"foobar", 0, b'f'), 0);
-        assert_eq!(strcspn(b"foobar", 1, b'b'), 2);
-        assert_eq!(strcspn(b"foobar", 2, b'x'), 4);
+        let s: Vec<char> = "foobar".chars().collect();
+        assert_eq!(strcspn(&s[..], 0, 'f'), 0);
+        assert_eq!(strcspn(&s[..], 1, 'b'), 2);
+        assert_eq!(strcspn(&s[..], 2, 'x'), 4);
     }
 }

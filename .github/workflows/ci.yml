@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - ci
+  pull_request:
+    branches: master
+
+jobs:
+  ci:
+    strategy:
+      matrix:
+        target:
+          - i686-unknown-linux-gnu
+          - i686-unknown-linux-musl
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+        include:
+          - target: i686-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: i686-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup OS packages (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get install -y build-essential gcc-multilib
+
+    - name: Setup Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+        override: true
+
+    - name: Build program
+      run: cargo build --verbose --release --target=${{ matrix.target }}
+
+    - name: Run tests
+      run: cargo test --verbose --target=${{ matrix.target }}
+      env:
+        RUST_BACKTRACE: 1

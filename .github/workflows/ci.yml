@@ -46,7 +46,7 @@ jobs:
     - name: Setup OS packages (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo apt-get install -y build-essentials gcc-multilib
+        sudo apt-get install -y build-essential gcc-multilib
 
     - name: Setup Rust toolchain
       uses: actions-rs/toolchain@v1

@@ -57,8 +57,16 @@ jobs:
       env:
         RUST_BACKTRACE: 1
 
-    - name: Upload built artifact
+    - name: Upload built artifact (Linux)
+      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v2
       with:
-        name: pmv-${{ github.sha }}-${{ matrix.target }}
+        name: pmv-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/pmv
+
+    - name: Upload built artifact (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pmv-${{ matrix.target }}
+        path: target\${{ matrix.target }}\release\pmv.exe

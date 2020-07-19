@@ -56,3 +56,9 @@ jobs:
       run: cargo test --verbose --target=${{ matrix.target }}
       env:
         RUST_BACKTRACE: 1
+
+    - name: Upload built artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: pmv-${{ github.sha }}-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/pmv

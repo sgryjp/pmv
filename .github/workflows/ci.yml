@@ -44,7 +44,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup OS packages (Linux)
-      if: matrix.os == "ubuntu-latest"
+      if: matrix.os == 'ubuntu-latest'
       run: |
         apt install -y build-essentials gcc-multilib
 

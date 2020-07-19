@@ -43,11 +43,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Setup Rust target
+    - name: Setup OS packages (Linux)
+      if: matrix.os == "ubuntu-latest"
+      run: |
+        apt install -y build-essentials gcc-multilib
+
+    - name: Setup Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         target: ${{ matrix.target }}
+        override: true
 
     - name: Build program
       run: cargo build --verbose --release --target=${{ matrix.target }}

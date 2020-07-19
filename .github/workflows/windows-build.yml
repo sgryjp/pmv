@@ -9,6 +9,13 @@ on:
     branches: master
 
 jobs:
+  strategy:
+    matrix:
+      target:
+        - i686-pc-windows-gnu
+        - i686-pc-windows-musl
+        - x86_64-pc-windows-gnu
+        - x86_64-pc-windows-musl
   build:
     runs-on: windows-latest
     steps:
@@ -17,7 +24,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Build program
-      run: cargo build --verbose --release
+      run: cargo build --verbose --release --target=${{ matrix.target }}
   test:
     runs-on: windows-latest
     steps:
@@ -26,6 +33,6 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --target=${{ matrix.target }}
       env:
         RUST_BACKTRACE: 1

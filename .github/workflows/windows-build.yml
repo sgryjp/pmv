@@ -12,15 +12,17 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout repository
+      uses: actions/checkout@v1
       with:
         ref: ${{ github.ref }}
-    - name: Build
+    - name: Build program
       run: cargo build --verbose --release
   test:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout repository
+      uses: actions/checkout@v1
       with:
         ref: ${{ github.ref }}
     - name: Run tests

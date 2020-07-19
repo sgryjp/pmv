@@ -9,15 +9,15 @@ on:
     branches: master
 
 jobs:
-  strategy:
-    matrix:
-      target:
-        - i686-pc-windows-gnu
-        - i686-pc-windows-musl
-        - x86_64-pc-windows-gnu
-        - x86_64-pc-windows-musl
   build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - i686-pc-windows-gnu
+          - i686-pc-windows-musl
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-musl
     steps:
     - name: Checkout repository
       uses: actions/checkout@v1
@@ -27,6 +27,13 @@ jobs:
       run: cargo build --verbose --release --target=${{ matrix.target }}
   test:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - i686-pc-windows-gnu
+          - i686-pc-windows-musl
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-musl
     steps:
     - name: Checkout repository
       uses: actions/checkout@v1

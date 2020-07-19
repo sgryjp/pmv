@@ -1,6 +1,6 @@
 # pmv
 
-[![Build Status](https://img.shields.io/github/workflow/status/sgryjp/pmv/linux-build)](https://github.com/sgryjp/pmv/actions?query=workflow%3Alinux-build)
+![CI](https://github.com/sgryjp/pmv/workflows/CI/badge.svg)
 [![Latest version](https://img.shields.io/crates/v/pmv.svg)](https://crates.io/crates/pmv)
 ![GitHub](https://img.shields.io/github/license/sgryjp/pmv)
 

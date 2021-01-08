@@ -40,6 +40,7 @@ jobs:
     - name: Setup OS packages (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo apt-get update
         sudo apt-get install -y build-essential gcc-multilib
 
     - name: Setup Rust toolchain
@@ -56,3 +57,21 @@ jobs:
       run: cargo test --verbose --target=${{ matrix.target }}
       env:
         RUST_BACKTRACE: 1
+
+    - name: Strip debug info from release binary (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: strip target/${{ matrix.target }}/release/pmv
+
+    - name: Upload built artifact (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pmv-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/pmv
+
+    - name: Upload built artifact (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pmv-${{ matrix.target }}
+        path: target\${{ matrix.target }}\release\pmv.exe

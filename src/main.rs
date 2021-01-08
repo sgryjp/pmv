@@ -7,7 +7,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use pmv::{move_files, resolve, walk};
+mod fsutil;
+use fsutil::{move_files, resolve, walk};
 
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
@@ -144,7 +145,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::validate;
+    use super::*;
     use std::path::PathBuf;
 
     #[test]

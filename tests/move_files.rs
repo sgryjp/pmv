@@ -1,3 +1,4 @@
+use function_name::named;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -48,9 +49,10 @@ fn content_of(id: &str, name: &str) -> String {
     fs::read_to_string(Path::new(&path)).unwrap()
 }
 
+#[named]
 #[test]
 fn dry_run() {
-    let id = "dry_run";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -68,9 +70,10 @@ fn dry_run() {
     assert_eq!(content_of(id, "f2"), format!("temp/{}/f2", id));
 }
 
+#[named]
 #[test]
 fn invalid_dest() {
-    let id = "invalid_dest";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -86,9 +89,10 @@ fn invalid_dest() {
     assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
 }
 
+#[named]
 #[test]
 fn file_to_file() {
-    let id = "file_to_file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -105,9 +109,10 @@ fn file_to_file() {
     assert_eq!(content_of(id, "f2"), format!("temp/{}/f1", id));
 }
 
+#[named]
 #[test]
 fn file_to_dir() {
-    let id = "file_to_dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -125,9 +130,10 @@ fn file_to_dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn file_to_symlink2file() {
-    let id = "file_to_symlink2file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -145,9 +151,10 @@ fn file_to_symlink2file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn file_to_symlink2dir() {
-    let id = "file_to_symlink2dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -166,9 +173,10 @@ fn file_to_symlink2dir() {
     assert_eq!(content_of(id, "ld1/f1"), format!("temp/{}/f1", id));
 }
 
+#[named]
 #[test]
 fn dir_to_file() {
-    let id = "dir_to_file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -185,9 +193,10 @@ fn dir_to_file() {
     assert_eq!(content_of(id, "f1"), format!("temp/{}/f1", id));
 }
 
+#[named]
 #[test]
 fn dir_to_dir() {
-    let id = "dir_to_dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -205,9 +214,10 @@ fn dir_to_dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn dir_to_symlink2file() {
-    let id = "dir_to_symlink2file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -225,9 +235,10 @@ fn dir_to_symlink2file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn dir_to_symlink2dir() {
-    let id = "dir_to_symlink2dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -246,9 +257,10 @@ fn dir_to_symlink2dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2file_to_file() {
-    let id = "symlink2file_to_file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -267,9 +279,10 @@ fn symlink2file_to_file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2file_to_dir() {
-    let id = "symlink2file_to_dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -288,9 +301,10 @@ fn symlink2file_to_dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2file_to_symlink2file() {
-    let id = "symlink2file_to_symlink2file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -312,9 +326,10 @@ fn symlink2file_to_symlink2file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2file_to_symlink2dir() {
-    let id = "symlink2file_to_symlink2dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkfile(id, "f1").unwrap();
@@ -335,9 +350,10 @@ fn symlink2file_to_symlink2dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2dir_to_file() {
-    let id = "symlink2dir_to_file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -356,9 +372,10 @@ fn symlink2dir_to_file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2dir_to_dir() {
-    let id = "symlink2dir_to_dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -377,9 +394,10 @@ fn symlink2dir_to_dir() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2dir_to_symlink2file() {
-    let id = "symlink2dir_to_symlink2file";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();
@@ -398,9 +416,10 @@ fn symlink2dir_to_symlink2file() {
 }
 
 #[cfg(unix)]
+#[named]
 #[test]
 fn symlink2dir_to_symlink2dir() {
-    let id = "symlink2dir_to_symlink2dir";
+    let id = function_name!();
 
     prepare_test(id).unwrap();
     mkdir(id, "d1").unwrap();

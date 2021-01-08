@@ -1,8 +1,6 @@
-mod fnmatch;
-mod walk;
+mod fsutil;
 
-pub use fnmatch::fnmatch;
-pub use walk::walk;
+pub use fsutil::{fnmatch, walk};
 
 use std::cmp;
 use std::io;

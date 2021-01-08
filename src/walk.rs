@@ -64,6 +64,8 @@ pub fn walk1(
                 }
                 Ok(iter) => iter,
             };
+
+            // Search entries of which name matches the pattern
             for maybe_entry in entry_iter {
                 let entry = match maybe_entry {
                     Err(err) => return Err(format!("failed to get a directory entry: {}", err)), //TODO: Test this
@@ -72,6 +74,8 @@ pub fn walk1(
                 let fname = entry.file_name();
                 let pattern = pattern.to_str().unwrap();
                 if let Some(mut m) = fnmatch(pattern, fname.to_str().unwrap()) {
+                    // Call self for the remaining path-components, or store
+                    // the matching result if it's a leaf
                     let mut matched_parts = matched_parts.clone();
                     matched_parts.append(&mut m);
                     let dir = dir.join(fname);

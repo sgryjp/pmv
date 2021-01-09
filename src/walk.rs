@@ -6,16 +6,28 @@ use std::{
 mod fnmatch;
 use fnmatch::fnmatch;
 
+/// An entry found in a walk.
+///
+/// This is a pair of a `std::fs::DirEntry` found while the walk and a vector
+/// of the substrings.
+pub struct Match {
+    pub dir_entry: DirEntry,
+    pub matched_parts: Vec<String>,
+}
+
+impl Match {
+    pub fn path(&self) -> PathBuf {
+        self.dir_entry.path()
+    }
+}
+
 /// Returns the directory entries which matched the given pattern.
 ///
 /// This function recursively search directory tree for entries matching the
 /// given pattern. While this function walks the directory tree, it remembers
 /// which part of the path corresponds to which wildcard in the pattern.
-/// For every matched entry this function finds, it creates a pair of an
-/// `std::fs::DirEntry` for it and a vector of the substrings, collect them as
-/// a vector, and return the vector.
-pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<(DirEntry, Vec<String>)>, String> {
-    let mut matches: Vec<(DirEntry, Vec<String>)> = Vec::new();
+pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<Match>, String> {
+    let mut matches: Vec<Match> = Vec::new();
     let mut matched_parts: Vec<String> = Vec::new();
     let patterns: Vec<Component> = Path::new(pattern).components().collect();
     walk1(dir, &patterns[..], &mut matches, &mut matched_parts)?;
@@ -25,7 +37,7 @@ pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<(DirEntry, Vec<String>)>, S
 pub fn walk1(
     dir: &Path,
     patterns: &[Component],
-    matches: &mut Vec<(DirEntry, Vec<String>)>,
+    matches: &mut Vec<Match>,
     matched_parts: &mut Vec<String>,
 ) -> Result<(), String> {
     if patterns.is_empty() {
@@ -86,7 +98,10 @@ pub fn walk1(
                         let patterns_ = &patterns[1..];
                         walk1(dir.as_path(), patterns_, matches, &mut matched_parts)?;
                     } else {
-                        matches.push((entry, matched_parts));
+                        matches.push(Match {
+                            dir_entry: entry,
+                            matched_parts,
+                        });
                     }
                 }
             }
@@ -122,11 +137,8 @@ mod tests {
             setup("no_specials");
             let matches = walk(Path::new("temp/no_specials"), "foo/bar/baz").unwrap();
             assert_eq!(matches.len(), 1);
-            assert_eq!(
-                matches[0].0.path(),
-                Path::new("temp/no_specials/foo/bar/baz")
-            );
-            assert_eq!(matches[0].1, Vec::<String>::new());
+            assert_eq!(matches[0].path(), Path::new("temp/no_specials/foo/bar/baz"));
+            assert_eq!(matches[0].matched_parts, Vec::<String>::new());
         }
 
         #[test]
@@ -134,9 +146,9 @@ mod tests {
             setup("question");
             let mut matches = walk(Path::new("temp/question"), "ba?/ba?/ba?").unwrap();
             assert_eq!(matches.len(), 8);
-            matches.sort_by(|a, b| a.0.path().cmp(&b.0.path()));
+            matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
-            let paths: Vec<_> = matches.iter().map(|m| m.0.path()).collect();
+            let paths: Vec<_> = matches.iter().map(|m| m.path()).collect();
             assert_eq!(
                 paths,
                 vec![
@@ -154,8 +166,9 @@ mod tests {
             let patterns: Vec<_> = matches
                 .iter()
                 .map(|x| {
-                    let s = &x.1;
-                    s.iter().fold("".to_string(), |acc, x| acc + "." + x)
+                    x.matched_parts
+                        .iter()
+                        .fold("".to_string(), |acc, x| acc + "." + x)
                 })
                 .collect();
             assert_eq!(
@@ -178,9 +191,9 @@ mod tests {
             setup("star");
             let mut matches = walk(Path::new("temp/star"), "b*/b*/b*").unwrap();
             assert_eq!(matches.len(), 8);
-            matches.sort_by(|a, b| a.0.path().cmp(&b.0.path()));
+            matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
-            let paths: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
+            let paths: Vec<_> = matches.iter().map(|x| x.path()).collect();
             assert_eq!(
                 paths,
                 vec![
@@ -198,8 +211,9 @@ mod tests {
             let patterns: Vec<_> = matches
                 .iter()
                 .map(|x| {
-                    let s = &x.1;
-                    s.iter().fold("".to_string(), |acc, x| acc + "." + x)
+                    x.matched_parts
+                        .iter()
+                        .fold("".to_string(), |acc, x| acc + "." + x)
                 })
                 .collect();
             assert_eq!(

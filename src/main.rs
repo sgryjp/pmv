@@ -119,9 +119,9 @@ fn main() {
     };
     let destinations: Vec<_> = matches
         .iter()
-        .map(|x| resolve(dest_ptn, &x.1[..]))
+        .map(|m| resolve(dest_ptn, &m.matched_parts[..]))
         .collect();
-    let sources: Vec<_> = matches.iter().map(|x| x.0.path()).collect();
+    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
     assert_eq!(sources.len(), destinations.len());
 
     // Validate them

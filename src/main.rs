@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 mod fsutil;
-use fsutil::{move_files, resolve, walk};
+mod walk;
+use fsutil::{move_files, resolve};
+use walk::walk;
 
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {

@@ -8,8 +8,10 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 mod fsutil;
+mod plan;
 mod walk;
-use fsutil::{move_files, resolve};
+use fsutil::move_files;
+use plan::resolve;
 use walk::walk;
 
 /// Returns an object which will be rendered as colored string on terminal.

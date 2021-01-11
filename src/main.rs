@@ -11,7 +11,7 @@ mod fsutil;
 mod plan;
 mod walk;
 use fsutil::move_files;
-use plan::resolve;
+use plan::substitute_variables;
 use walk::walk;
 
 /// Returns an object which will be rendered as colored string on terminal.
@@ -105,7 +105,7 @@ fn main() {
     let dry_run = 0 < matches.occurrences_of("dry-run");
     let verbose = 0 < matches.occurrences_of("verbose");
 
-    // Gather source and destination paths
+    // Collect paths of the files to move with their destination
     let matches = match walk(Path::new("."), src_ptn) {
         Err(err) => {
             eprintln!(
@@ -119,7 +119,7 @@ fn main() {
     };
     let destinations: Vec<_> = matches
         .iter()
-        .map(|m| resolve(dest_ptn, &m.matched_parts[..]))
+        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
         .collect();
     let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
     assert_eq!(sources.len(), destinations.len());

@@ -6,7 +6,7 @@ use std::{
 mod fnmatch;
 use fnmatch::fnmatch;
 
-/// An entry found in a walk.
+/// A directory entry found in a walk paired with pattern matched substrings.
 ///
 /// This is a pair of a `std::fs::DirEntry` found while the walk and a vector
 /// of the substrings.

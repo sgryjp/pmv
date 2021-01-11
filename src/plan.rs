@@ -1,10 +1,15 @@
 use std::path::MAIN_SEPARATOR;
 
-/// Replaces variables in the given destination path string using the given
-/// substrings.
-pub fn resolve(dest: &str, substrings: &[String]) -> String {
+/// Substitute variables with substrings.
+///
+/// This function replaces every variable notations `#n` in `dest` with
+/// `substrings[n-1]` (e.g.: `#2` will be replaced with the second element in
+/// `substrings`).
+///
+/// Note that up to 9 variables (i.e.: `#1` to `#9`) are supported.
+pub fn substitute_variables(dest: &str, substrings: &[String]) -> String {
     let dest = dest.as_bytes();
-    let mut resolved = String::new();
+    let mut substituted = String::new();
     let mut i = 0;
     while i < dest.len() {
         if dest[i] == b'#' && i + 1 < dest.len() && b'1' <= dest[i + 1] && dest[i + 1] <= b'9' {
@@ -12,30 +17,30 @@ pub fn resolve(dest: &str, substrings: &[String]) -> String {
             let replacement = match substrings.get(index) {
                 Some(s) => s,
                 None => {
-                    resolved.push('#');
-                    resolved.push(dest[i + 1] as char);
+                    substituted.push('#');
+                    substituted.push(dest[i + 1] as char);
                     i += 2;
                     continue;
                 }
             };
-            resolved.push_str(replacement);
+            substituted.push_str(replacement);
             i += 2;
         } else if dest[i] == b'\\' || dest[i] == b'/' {
-            resolved.push(MAIN_SEPARATOR);
+            substituted.push(MAIN_SEPARATOR);
             i += 1;
         } else {
-            resolved.push(dest[i] as char);
+            substituted.push(dest[i] as char);
             i += 1;
         }
     }
-    resolved
+    substituted
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    mod resolve {
+    mod substitute_variables {
         use super::*;
 
         // Testing points of view:
@@ -69,14 +74,14 @@ mod tests {
         fn dest_empty() {
             let dest = "";
             let substrs = default_substrs();
-            assert_eq!(resolve(dest, &substrs[..]), String::from(""));
+            assert_eq!(substitute_variables(dest, &substrs[..]), String::from(""));
         }
 
         #[test]
         fn dest_no_vars() {
             let dest = "/foo/bar";
             let substrs = default_substrs();
-            assert_eq!(resolve(dest, &substrs[..]), format!("{}foo{}bar", SEP, SEP));
+            assert_eq!(substitute_variables(dest, &substrs[..]), format!("{}foo{}bar", SEP, SEP));
         }
 
         #[test]
@@ -84,7 +89,7 @@ mod tests {
             let dest = "/foo/bar/#";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}#", SEP, SEP, SEP)
             );
         }
@@ -94,7 +99,7 @@ mod tests {
             let dest = "/foo/bar/#0";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}#0", SEP, SEP, SEP)
             );
         }
@@ -104,7 +109,7 @@ mod tests {
             let dest = "/foo/bar/#1";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}v1", SEP, SEP, SEP)
             );
         }
@@ -114,7 +119,7 @@ mod tests {
             let dest = "/foo/bar/#9";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}v9", SEP, SEP, SEP)
             );
         }
@@ -124,7 +129,7 @@ mod tests {
             let dest = "/foo/bar/#:";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}#:", SEP, SEP, SEP)
             );
         }
@@ -134,7 +139,7 @@ mod tests {
             let dest = "/foo/bar/#10";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}v10", SEP, SEP, SEP)
             );
         }
@@ -144,7 +149,7 @@ mod tests {
             let dest = "/foo/#1/baz";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}v1{}baz", SEP, SEP, SEP)
             );
         }
@@ -154,7 +159,7 @@ mod tests {
             let dest = "/foo/bar/baz_#1.txt";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}bar{}baz_v1.txt", SEP, SEP, SEP)
             );
         }
@@ -164,7 +169,7 @@ mod tests {
             let dest = "/foo/#3/#1#2.#9";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}v3{}v1v2.v9", SEP, SEP, SEP)
             );
         }
@@ -177,7 +182,7 @@ mod tests {
                 .map(|x| String::from(*x))
                 .collect::<Vec<_>>();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("{}foo{}#3{}v1#2.txt", SEP, SEP, SEP)
             );
         }
@@ -187,7 +192,7 @@ mod tests {
             let dest = "foo\\bar/baz";
             let substrs = default_substrs();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("foo{}bar{}baz", SEP, SEP)
             );
         }
@@ -197,7 +202,7 @@ mod tests {
             let dest = "foo/bar/baz";
             let substrs: Vec<String> = Vec::new();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("foo{}bar{}baz", SEP, SEP)
             );
         }
@@ -210,7 +215,7 @@ mod tests {
                 .map(|x| String::from(*x))
                 .collect::<Vec<_>>();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("foo{}v1{}baz", SEP, SEP)
             );
         }
@@ -223,7 +228,7 @@ mod tests {
                 .map(|x| String::from(*x))
                 .collect::<Vec<_>>();
             assert_eq!(
-                resolve(dest, &substrs[..]),
+                substitute_variables(dest, &substrs[..]),
                 format!("foo{}v1{}v2", SEP, SEP)
             );
         }
@@ -235,7 +240,7 @@ mod tests {
                 .iter()
                 .map(|x| String::from(*x))
                 .collect::<Vec<_>>();
-            assert_eq!(resolve(dest, &substrs[..]), format!("foo{}/{}/", SEP, SEP));
+            assert_eq!(substitute_variables(dest, &substrs[..]), format!("foo{}/{}/", SEP, SEP));
         }
     }
 }

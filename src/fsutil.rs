@@ -152,7 +152,7 @@ mod tests {
             let dry_run = true;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(mkpathbuf(id, "f1").exists());
@@ -172,7 +172,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "\0")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "f1").exists());
@@ -192,7 +192,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -212,7 +212,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "d1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -233,7 +233,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -255,7 +255,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
             let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -276,7 +276,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
             let dests: Vec<String> = vec![mkpathstring(id, "f1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").exists());
@@ -296,7 +296,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
             let dests: Vec<String> = vec![mkpathstring(id, "d2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -318,7 +318,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
             let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").is_dir());
@@ -339,7 +339,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
             let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -361,7 +361,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
             let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").is_file());
@@ -383,7 +383,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
             let dests: Vec<String> = vec![mkpathstring(id, "d1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -406,7 +406,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
             let dests: Vec<String> = vec![mkpathstring(id, "lf2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -431,7 +431,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
             let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -454,7 +454,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
             let dests: Vec<String> = vec![mkpathstring(id, "f1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -476,7 +476,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
             let dests: Vec<String> = vec![mkpathstring(id, "d2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());
@@ -499,7 +499,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
             let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -521,7 +521,7 @@ mod tests {
             let dry_run = false;
             let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
             let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, None);
+            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());

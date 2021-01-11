@@ -62,6 +62,12 @@ fn main() {
                 .help("Do not actually move the files, just show what would be done."),
         )
         .arg(
+            clap::Arg::with_name("interactive")
+                .short("i")
+                .long("interactive")
+                .help("Prompt before moving an each file."),
+        )
+        .arg(
             clap::Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
@@ -104,6 +110,7 @@ fn main() {
     let dest_ptn = matches.value_of("DEST").unwrap();
     let dry_run = 0 < matches.occurrences_of("dry-run");
     let verbose = 0 < matches.occurrences_of("verbose");
+    let interactive = 0 < matches.occurrences_of("interactive");
 
     // Collect paths of the files to move with their destination
     let matches = match walk(Path::new("."), src_ptn) {
@@ -135,6 +142,7 @@ fn main() {
         &sources,
         &destinations,
         dry_run,
+        interactive,
         verbose,
         Some(&|src, _dest, err| {
             eprintln!(

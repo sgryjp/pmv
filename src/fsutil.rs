@@ -1,11 +1,13 @@
 use std::cmp;
 use std::io;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub fn move_files(
     sources: &[PathBuf],
     destinations: &[String],
     dry_run: bool,
+    interactive: bool,
     verbose: bool,
     on_error: Option<&dyn Fn(&str, &str, &io::Error) -> ()>,
 ) -> i32 {
@@ -49,8 +51,28 @@ pub fn move_files(
         }
         line.push_str(" --> "); //TODO: Wrap line if it's too long
         line.push_str(dest);
-        if verbose || dry_run {
+        if dry_run || (verbose && !interactive) {
             println!("{}", line);
+        } else if interactive {
+            // Ask user to proceed or not
+            print!("{} ... ok? [y/N]: ", line);
+            let _ = io::stdout().lock().flush();
+            let mut line = String::new();
+            let nbytes_read = io::stdin().read_line(&mut line).unwrap_or(0);
+            if nbytes_read == 0 {
+                if let Some(f) = on_error {
+                    let err = io::Error::new(io::ErrorKind::Other, "error on reading user input");
+                    f(src, dest, &err);
+                }
+                num_errors += 1;
+                continue;
+            }
+
+            // Skip if the input was not "y"
+            let line = line.trim();
+            if line.to_ascii_lowercase() != "y" {
+                continue;
+            }
         }
         if !dry_run {
             if let Err(err) = std::fs::rename(src, dest) {

@@ -1,6 +1,12 @@
 <!-- markdownlint-disable MD024-->
 # Change Log
 
+## [Unreleased]
+
+### Fixed
+
+- pmv could try to list children of *a file* and fail ([#17][issue17])
+
 ## [0.4.0] - 2020-01-18
 
 ### Changed
@@ -12,3 +18,5 @@
 ### Fixed
 
 - Disallow to move a directory to path where a file exists
+
+[issue17]: https://github.com/sgryjp/pmv/issues/17

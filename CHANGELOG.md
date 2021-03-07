@@ -3,7 +3,7 @@
 
 ## [0.4.0] - 2020-01-18
 
-### Change
+### Changed
 
 - Bump version number to make a release
 

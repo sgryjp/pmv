@@ -1,8 +1,8 @@
 # pmv
 
-![CI](https://github.com/sgryjp/pmv/workflows/CI/badge.svg)
-[![Latest version](https://img.shields.io/crates/v/pmv.svg)](https://crates.io/crates/pmv)
-![GitHub](https://img.shields.io/github/license/sgryjp/pmv)
+[![CI](https://github.com/sgryjp/pmv/actions/workflows/ci.yml/badge.svg)][ci-status]
+[![Latest version](https://img.shields.io/crates/v/pmv)](https://crates.io/crates/pmv)
+[![license](https://img.shields.io/github/license/sgryjp/pmv)][license-file]
 
 A command line tool to move multiple files at once, using wildcard patterns.
 
@@ -74,3 +74,6 @@ Rust 1.36.0 or newer is required to build `pmv`.
 ## References
 
 - [mmv](https://ss64.com/bash/mmv.html)
+
+[ci-status]: https://github.com/sgryjp/pmv/actions/workflows/ci.yml
+[license-file]: https://github.com/sgryjp/pmv/blob/master/LICENSE

@@ -40,6 +40,9 @@ pub fn walk1(
     matches: &mut Vec<Match>,
     matched_parts: &mut Vec<String>,
 ) -> Result<(), String> {
+    assert!(dir.is_dir());
+    assert!(!patterns.is_empty());
+
     if patterns.is_empty() {
         return Ok(());
     }
@@ -82,26 +85,52 @@ pub fn walk1(
 
             // Search entries of which name matches the pattern
             for maybe_entry in entry_iter {
+                // Acquire the entry
                 let entry = match maybe_entry {
                     Err(err) => return Err(format!("failed to get a directory entry: {}", err)), //TODO: Test this
                     Ok(entry) => entry,
                 };
+
+                // Match its name
                 let fname = entry.file_name();
                 let pattern = pattern.to_str().unwrap();
                 if let Some(mut m) = fnmatch(pattern, fname.to_str().unwrap()) {
-                    // Call self for the remaining path-components, or store
-                    // the matching result if it's a leaf
+                    // It matched, then query its metadata
+                    let file_type = match entry.path().metadata() {
+                        Err(err) => {
+                            return Err(format!(
+                                "failed to get metadata of {:?}: {}",
+                                entry.path().to_str().unwrap_or("<UNKNOWN>"),
+                                err
+                            ))
+                        }
+                        Ok(v) => v.file_type(),
+                    };
+
+                    // Distinguish and switch procedure according to its type
                     let mut matched_parts = matched_parts.clone();
                     matched_parts.append(&mut m);
-                    let dir = dir.join(fname);
-                    if 1 < patterns.len() {
-                        let patterns_ = &patterns[1..];
-                        walk1(dir.as_path(), patterns_, matches, &mut matched_parts)?;
+                    if file_type.is_dir() {
+                        let subdir = dir.join(fname);
+                        if 1 < patterns.len() {
+                            // Walk into the found sub directory
+                            let patterns_ = &patterns[1..];
+                            walk1(subdir.as_path(), patterns_, matches, &mut matched_parts)?;
+                        } else {
+                            // Found a matched directory as a leaf; store the path
+                            matches.push(Match {
+                                dir_entry: entry,
+                                matched_parts,
+                            });
+                        }
                     } else {
-                        matches.push(Match {
-                            dir_entry: entry,
-                            matched_parts,
-                        });
+                        // Found a file; store the path only if it matched the last pattern (leaf)
+                        if patterns.len() <= 1 {
+                            matches.push(Match {
+                                dir_entry: entry,
+                                matched_parts: matched_parts.clone(),
+                            });
+                        }
                     }
                 }
             }
@@ -113,6 +142,7 @@ pub fn walk1(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use function_name::named;
 
     mod walk {
         use super::*;
@@ -130,6 +160,23 @@ mod tests {
                     }
                 }
             }
+        }
+
+        fn new_setup(id: &str, prereq_dirs: Vec<&str>, prereq_files: Vec<&str>) -> PathBuf {
+            // Prepare working directory
+            let workdir = Path::join(Path::new("temp"), id);
+            let _ = fs::remove_dir_all(workdir.as_path());
+            fs::create_dir_all(workdir.as_path()).unwrap();
+
+            // Create directories and files for the test
+            for dirpath in prereq_dirs.iter() {
+                fs::create_dir_all(Path::join(workdir.as_path(), dirpath)).unwrap();
+            }
+            for filepath in prereq_files.iter() {
+                fs::write(Path::join(workdir.as_path(), filepath), filepath.as_bytes()).unwrap();
+            }
+
+            return workdir;
         }
 
         #[test]
@@ -229,6 +276,17 @@ mod tests {
                     String::from(".az.az.az"),
                 ]
             );
+        }
+
+        #[named]
+        #[test]
+        fn issue17() {
+            let prereq_dirs: Vec<&str> = vec![];
+            let prereq_files = vec!["foo"];
+            let workdir = new_setup(function_name!(), prereq_dirs, prereq_files);
+
+            // pmv should not misrecognize "foo" as a directory
+            walk(workdir.as_path(), "foo/bar").unwrap();
         }
     }
 }

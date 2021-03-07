@@ -20,10 +20,13 @@ USAGE:
 
 FLAGS:
     -n, --dry-run
-            Do not actually move the files, just show what would be done.
-
+            Do not actually move the files, just show what would be
+            done.
     -h, --help
             Prints help information
+
+    -i, --interactive
+            Prompt before moving an each file.
 
     -V, --version
             Prints version information
@@ -34,17 +37,22 @@ FLAGS:
 
 ARGS:
     <SOURCE>
-            A pattern string specifying files to move. If the pattern contains wildcard(s), multiple files
-            matching to the pattern will be targeted. Supported wildcards are:
+            A pattern string specifying files to move. If the
+            pattern contains wildcard(s), multiple files matching
+            to the pattern will be targeted. Supported wildcards
+            are:
 
                 ? ... Matches a single character
                 * ... Matches zero or more characters
     <DEST>
-            A pattern string specifying where to move the targeted files. If the pattern contains tokens like
-            `#1` or `#2`, each of them will be replaced with a substring extracted from the targeted file path.
-            Those substrings matches the wildcard patterns in SOURCE; `#1` matches the first wildcard, `#2`
-            matches the second wildcard, respectively. For example, if SOURCE is `*_test.py` and DEST is
-            `tests/test_#1.py`:
+            A pattern string specifying where to move the targeted
+            files. If the pattern contains tokens like `#1` or
+            `#2`, each of them will be replaced with a substring
+            extracted from the targeted file path. Those substrings
+            matches the wildcard patterns in SOURCE; `#1` matches
+            the first wildcard, `#2` matches the second wildcard,
+            respectively. For example, if SOURCE is `*_test.py` and
+            DEST is `tests/test_#1.py`:
 
                 Exisitng File | Destination
                 ------------- | -----------------

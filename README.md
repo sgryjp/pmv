@@ -6,13 +6,13 @@
 
 A command line tool to move multiple files at once, using wildcard patterns.
 
-# Features
+## Features
 
 - Accepts wildcard patterns for selecting files to move
 - Colorized terminal output
 - Runs on Windows and Linux (may run on macOS too?)
 
-# Usage
+## Usage
 
 ```text
 USAGE:
@@ -53,14 +53,16 @@ ARGS:
                 hoge_test.py  | tests/test_hoge.py
 ```
 
-# Installation
+## Installation
 
-## Cargo
+### Cargo
 
-    $ cargo install pmv
+```shell
+cargo install pmv
+```
 
 Rust 1.36.0 or newer is required to build `pmv`.
 
-# References
+## References
 
 - [mmv](https://ss64.com/bash/mmv.html)

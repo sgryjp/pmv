@@ -20,19 +20,19 @@ USAGE:
 
 FLAGS:
     -n, --dry-run
-            Do not actually move the files, just show what would be
-            done.
+            Does not move files but just shows what would be done
+
     -h, --help
             Prints help information
 
     -i, --interactive
-            Prompt before moving an each file.
+            Prompts before moving an each file
 
     -V, --version
             Prints version information
 
     -v, --verbose
-            Write verbose message.
+            Writes verbose message
 
 
 ARGS:
@@ -50,7 +50,7 @@ ARGS:
             `#2`, each of them will be replaced with a substring
             extracted from the targeted file path. Those substrings
             matches the wildcard patterns in SOURCE; `#1` matches
-            the first wildcard, `#2` matches the second wildcard,
+            the first wildcard, `#2` matches the second,
             respectively. For example, if SOURCE is `*_test.py` and
             DEST is `tests/test_#1.py`:
 

@@ -59,19 +59,19 @@ fn main() {
             clap::Arg::with_name("dry-run")
                 .short("n")
                 .long("dry-run")
-                .help("Do not actually move the files, just show what would be done."),
+                .help("Does not move files but just shows what would be done"),
         )
         .arg(
             clap::Arg::with_name("interactive")
                 .short("i")
                 .long("interactive")
-                .help("Prompt before moving an each file."),
+                .help("Prompts before moving an each file"),
         )
         .arg(
             clap::Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
-                .help("Write verbose message."),
+                .help("Writes verbose message"),
         )
         .arg(
             clap::Arg::with_name("SOURCE")
@@ -96,8 +96,8 @@ fn main() {
                      contains tokens like `#1` or `#2`, each of them will be replaced with a \
                      substring extracted from the targeted file path. Those substrings matches \
                      the wildcard patterns in SOURCE; `#1` matches the first wildcard, `#2` \
-                     matches the second wildcard, respectively. For example, if SOURCE is \
-                     `*_test.py` and DEST is `tests/test_#1.py`:\n\n    \
+                     matches the second, respectively. For example, if SOURCE is `*_test.py` and \
+                     DEST is `tests/test_#1.py`:\n\n    \
                      Exisitng File | Destination\n    \
                      ------------- | -----------------\n    \
                      foo_test.py   | tests/test_foo.py\n    \

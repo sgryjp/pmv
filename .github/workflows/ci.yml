@@ -34,8 +34,6 @@ jobs:
             os: ubuntu-latest
           - target: x86_64-apple-darwin
             os: macos-latest
-          - target: aarch64-apple-darwin
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
@@ -58,7 +56,9 @@ jobs:
       run: cargo build --verbose --release --target=${{ matrix.target }}
 
     - name: Run tests
-      run: cargo test --verbose --target=${{ matrix.target }}
+      run: |
+        cargo build --tests --target=${{ matrix.target }}
+        cargo test --verbose --target=${{ matrix.target }}
       env:
         RUST_BACKTRACE: 1
 

@@ -1,10 +1,14 @@
+use function_name::named;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
+#[named]
+#[allow(dead_code)]
 //#[test]
 fn swap_filenames() {
-    let temp_dir = PathBuf::from("temp/integration_1");
+    assert!(PathBuf::from("./Cargo.toml").exists());
+    let temp_dir = PathBuf::from(format!("temp/system/{}", function_name!()));
 
     // Prepare files and directories to testing
     if temp_dir.exists() {
@@ -15,7 +19,8 @@ fn swap_filenames() {
     fs::write(&temp_dir.join("BA"), "BA").unwrap();
 
     // Execute pmv
-    let mut command = Command::new("../../target/debug/pmv");
+    let cmd_path = PathBuf::from("./target/debug/pmv").canonicalize().unwrap();
+    let mut command = Command::new(cmd_path);
     let output = command
         .current_dir(&temp_dir)
         .arg("-v")

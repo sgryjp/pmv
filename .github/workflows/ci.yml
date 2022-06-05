@@ -32,6 +32,8 @@ jobs:
             os: ubuntu-latest
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
@@ -54,23 +56,25 @@ jobs:
       run: cargo build --verbose --release --target=${{ matrix.target }}
 
     - name: Run tests
-      run: cargo test --verbose --target=${{ matrix.target }}
+      run: |
+        cargo build --tests --target=${{ matrix.target }}
+        cargo test --verbose --target=${{ matrix.target }}
       env:
         RUST_BACKTRACE: 1
 
-    - name: Strip debug info from release binary (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Strip debug info from release binary (Linux, mac)
+      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       run: strip target/${{ matrix.target }}/release/pmv
 
-    - name: Upload built artifact (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Upload built artifact (Linux, mac)
+      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       uses: actions/upload-artifact@v2
       with:
         name: pmv-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/pmv
 
     - name: Upload built artifact (Windows)
-      if: matrix.os == 'windows-latest'
+      if: startsWith(matrix.os, 'windows')
       uses: actions/upload-artifact@v2
       with:
         name: pmv-${{ matrix.target }}

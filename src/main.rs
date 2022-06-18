@@ -23,6 +23,12 @@ struct Config {
     interactive: bool,
 }
 
+/// A pair of source and destination in a moving plan.
+struct Entry {
+    src: PathBuf,
+    dest: String,
+}
+
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
     if atty::is(atty::Stream::Stderr) {
@@ -105,7 +111,7 @@ fn parse_args(args: env::ArgsOs) -> Config {
     }
 }
 
-fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> (Vec<PathBuf>, Vec<String>) {
+fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
     let matches = match walk(Path::new("."), src_ptn) {
         Err(err) => {
             eprintln!(
@@ -117,14 +123,16 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> (Vec<PathBuf>, Vec<Strin
         }
         Ok(matches) => matches,
     };
-    let destinations: Vec<_> = matches
-        .iter()
-        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
-        .collect();
-    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
-    assert_eq!(sources.len(), destinations.len());
 
-    (sources, destinations)
+    let mut entries = Vec::new();
+    for m in matches {
+        let ent = Entry {
+            src: m.path(),
+            dest: substitute_variables(dest_ptn, &m.matched_parts[..]),
+        };
+        entries.push(ent);
+    }
+    entries
 }
 
 fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
@@ -157,8 +165,9 @@ fn main() {
     let config = parse_args(env::args_os());
 
     // Collect paths of the files to move with their destination
-    let (sources, destinations) =
-        matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
+    let entries = matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
+    let sources: Vec<_> = entries.iter().map(|ent| ent.src.to_owned()).collect(); //TODO: Do not copy
+    let destinations: Vec<_> = entries.iter().map(|ent| ent.dest.to_owned()).collect(); //TODO: Do not copy
 
     // Validate them
     if let Err(err) = validate(&sources, &destinations) {
@@ -194,24 +203,28 @@ mod tests {
 
         #[test]
         fn no_match() {
-            let (sources, destinations) = matches_to_entries("zzzzz", "zzzzz");
-            assert_eq!(sources.len(), 0);
-            assert_eq!(destinations.len(), 0);
+            let entries = matches_to_entries("zzzzz", "zzzzz");
+            assert_eq!(entries.len(), 0);
         }
 
         #[test]
         fn multiple_matches() {
-            let (sources, destinations) = matches_to_entries("Cargo.*", "Foobar.#1");
-            assert_eq!(sources.len(), 2);
-            assert_eq!(sources[0].file_name().unwrap(), PathBuf::from("Cargo.toml"));
-            assert_eq!(sources[1].file_name().unwrap(), PathBuf::from("Cargo.lock"));
-            assert_eq!(destinations.len(), 2);
+            let entries = matches_to_entries("Cargo.*", "Foobar.#1");
+            assert_eq!(entries.len(), 2);
             assert_eq!(
-                PathBuf::from(&destinations[0]).file_name().unwrap(),
+                entries[0].src.file_name().unwrap(),
+                PathBuf::from("Cargo.toml")
+            );
+            assert_eq!(
+                entries[1].src.file_name().unwrap(),
+                PathBuf::from("Cargo.lock")
+            );
+            assert_eq!(
+                PathBuf::from(&entries[0].dest).file_name().unwrap(),
                 PathBuf::from("Foobar.toml")
             );
             assert_eq!(
-                PathBuf::from(&destinations[1]).file_name().unwrap(),
+                PathBuf::from(&entries[1].dest).file_name().unwrap(),
                 PathBuf::from("Foobar.lock")
             );
         }

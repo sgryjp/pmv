@@ -135,20 +135,22 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
     entries
 }
 
-fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
+fn validate(entries: &[Entry]) -> Result<(), String> {
+    // Make reference version of the entries
+    let mut entries: Vec<&Entry> = entries.iter().collect();
+
     // Ensure that no files share a same destination path
-    let mut sorted: Vec<_> = destinations.iter().enumerate().collect();
-    sorted.sort_by(|a, b| a.1.cmp(&b.1));
-    for i in 1..sorted.len() {
-        let p1 = &sorted[i - 1];
-        let p2 = &sorted[i];
-        if p1.1 == p2.1 {
+    entries.sort_by(|a, b| a.dest.cmp(&b.dest));
+    for i in 1..entries.len() {
+        let p1 = entries[i - 1];
+        let p2 = entries[i];
+        if p1.dest == p2.dest {
             return Err(format!(
                 "destination must be different for each file: \
                  tried to move both \"{}\" and \"{}\" to \"{}\"",
-                sources[p1.0].to_str().unwrap(),
-                sources[p2.0].to_str().unwrap(),
-                destinations[p1.0],
+                p1.src.to_str().unwrap(),
+                p2.src.to_str().unwrap(),
+                p1.dest,
             ));
         }
     }
@@ -166,14 +168,14 @@ fn main() {
 
     // Collect paths of the files to move with their destination
     let entries = matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
-    let sources: Vec<_> = entries.iter().map(|ent| ent.src.to_owned()).collect(); //TODO: Do not copy
-    let destinations: Vec<_> = entries.iter().map(|ent| ent.dest.to_owned()).collect(); //TODO: Do not copy
 
     // Validate them
-    if let Err(err) = validate(&sources, &destinations) {
+    if let Err(err) = validate(&entries) {
         eprintln!("{}: {}", style_error("error"), err);
         exit(1);
     }
+    let sources: Vec<_> = entries.iter().map(|ent| ent.src.to_owned()).collect(); //TODO: Do not copy
+    let destinations: Vec<_> = entries.iter().map(|ent| ent.dest.to_owned()).collect(); //TODO: Do not copy
 
     // Move files
     move_files(
@@ -197,6 +199,15 @@ fn main() {
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    impl Entry {
+        fn from_str(src: &str, dest: &str) -> Entry {
+            Entry {
+                src: PathBuf::from(src),
+                dest: dest.to_owned(),
+            }
+        }
+    }
 
     mod matches_to_entries {
         use super::*;
@@ -232,23 +243,18 @@ mod tests {
 
     #[test]
     fn test_validation_ok() {
-        let sources: Vec<PathBuf> = vec!["src/foo.rs"].iter().map(PathBuf::from).collect();
-        let destinations: Vec<_> = vec![String::from("src/foo")];
-        let result = validate(&sources, &destinations);
+        let entries = vec![Entry::from_str("src/foo.rs", "src/foo")];
+        let result = validate(&entries);
         result.unwrap();
     }
 
     #[test]
     fn test_validation_duplicated_dest() {
-        let sources: Vec<PathBuf> = vec!["src/foo.rs", "src/bar.rs"]
-            .iter()
-            .map(PathBuf::from)
-            .collect();
-        let destinations: Vec<String> = vec!["src/foo.rs", "src/foo.rs"]
-            .iter()
-            .map(|x| String::from(*x))
-            .collect();
-        let result = validate(&sources, &destinations);
+        let entries = vec![
+            Entry::from_str("src/foo.rs", "src/foo.rs"),
+            Entry::from_str("src/bar.rs", "src/foo.rs"),
+        ];
+        let result = validate(&entries);
         let err = result.unwrap_err();
         assert!(err.contains("destination must be different for each file"));
         assert!(err.contains("src/foo.rs"));

@@ -24,9 +24,24 @@ struct Config {
 }
 
 /// A pair of source and destination in a moving plan.
-struct Entry {
+pub struct Entry {
     src: PathBuf,
     dest: String,
+}
+
+impl Entry {
+    pub fn from_str(src: &str, dest: &str) -> Entry {
+        Entry {
+            src: PathBuf::from(src),
+            dest: dest.to_owned(),
+        }
+    }
+}
+
+impl<'a> From<&'a Entry> for (&'a Path, &'a str) {
+    fn from(ent: &'a Entry) -> (&'a Path, &'a str) {
+        (&ent.src.as_path(), &ent.dest.as_str())
+    }
 }
 
 /// Returns an object which will be rendered as colored string on terminal.
@@ -174,13 +189,10 @@ fn main() {
         eprintln!("{}: {}", style_error("error"), err);
         exit(1);
     }
-    let sources: Vec<_> = entries.iter().map(|ent| ent.src.to_owned()).collect(); //TODO: Do not copy
-    let destinations: Vec<_> = entries.iter().map(|ent| ent.dest.to_owned()).collect(); //TODO: Do not copy
 
     // Move files
     move_files(
-        &sources,
-        &destinations,
+        &entries,
         config.dry_run,
         config.interactive,
         config.verbose,
@@ -199,15 +211,6 @@ fn main() {
 mod tests {
     use super::*;
     use std::path::PathBuf;
-
-    impl Entry {
-        fn from_str(src: &str, dest: &str) -> Entry {
-            Entry {
-                src: PathBuf::from(src),
-                dest: dest.to_owned(),
-            }
-        }
-    }
 
     mod matches_to_entries {
         use super::*;

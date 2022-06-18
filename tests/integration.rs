@@ -1,7 +1,11 @@
 use function_name::named;
+use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+
+use pmv::try_main;
 
 fn prepare(function_name: &str) -> PathBuf {
     assert!(PathBuf::from("./Cargo.toml").exists());
@@ -31,18 +35,17 @@ fn dry_run() {
     fs::write(&temp_dir.join("AB"), "AB").unwrap();
 
     // Execute pmv with --dry-run
-    let mut command = make_command();
-    let output = command
-        .current_dir(&temp_dir)
-        .arg("--dry-run")
-        .arg("??")
-        .arg("B#2")
-        .output()
-        .expect("Failed to launch pmv (debug build)");
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("AA --> BA"));
-    assert!(stdout.contains("AB --> BB"));
+    let mut args: Vec<OsString> = vec![
+        PathBuf::from("--dry-run"),
+        temp_dir.join("??"),
+        temp_dir.join("B#2"),
+    ]
+    .iter()
+    .map(|s| OsString::from(s))
+    .collect();
+    args.insert(0, env::args_os().next().unwrap());
+    let result = try_main(&args);
+    assert!(result.is_ok());
 
     // Confirm nothing moved
     let path_ba = temp_dir.join("BA");
@@ -51,14 +54,13 @@ fn dry_run() {
     assert!(!path_bb.exists());
 
     // Then do the same without --dry-run
-    let mut command = make_command();
-    let output = command
-        .current_dir(&temp_dir)
-        .arg("??")
-        .arg("B#2")
-        .output()
-        .expect("Failed to launch pmv (debug build)");
-    assert!(output.status.success());
+    let mut args: Vec<OsString> = vec![temp_dir.join("??"), temp_dir.join("B#2")]
+        .iter()
+        .map(|s| OsString::from(s))
+        .collect();
+    args.insert(0, env::args_os().next().unwrap());
+    let result = try_main(&args);
+    assert!(result.is_ok());
 
     // Confirm files were moved
     assert!(path_ba.exists());

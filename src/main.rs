@@ -4,6 +4,7 @@ extern crate ansi_term;
 extern crate atty;
 
 use std::env;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
@@ -53,7 +54,7 @@ fn style_error(s: &str) -> ansi_term::ANSIString {
     }
 }
 
-fn parse_args(args: env::ArgsOs) -> Config {
+fn parse_args(args: &[OsString]) -> Config {
     let matches = clap::App::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
@@ -173,22 +174,30 @@ fn validate(entries: &[Entry]) -> Result<(), String> {
     Ok(())
 }
 
-fn main() {
+fn main() -> Result<(), ()> {
+    let args: Vec<OsString> = env::args_os().into_iter().map(|s| s.to_owned()).collect();
+
+    if let Err(err) = try_main(&args[..]) {
+        eprintln!("{}: {}", style_error("error"), err);
+        return Err(());
+    }
+
+    Ok(())
+}
+
+fn try_main(args: &[OsString]) -> Result<(), String> {
     // Enable colored output
     #[cfg(windows)]
     ansi_term::enable_ansi_support().unwrap();
 
     // Parse arguments
-    let config = parse_args(env::args_os());
+    let config = parse_args(args);
 
     // Collect paths of the files to move with their destination
     let entries = matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
 
     // Validate them
-    if let Err(err) = validate(&entries) {
-        eprintln!("{}: {}", style_error("error"), err);
-        exit(1);
-    }
+    validate(&entries)?;
 
     // Move files
     move_files(
@@ -205,6 +214,8 @@ fn main() {
             );
         }),
     );
+
+    Ok(())
 }
 
 #[cfg(test)]

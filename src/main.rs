@@ -23,6 +23,28 @@ fn style_error(s: &str) -> ansi_term::ANSIString {
     }
 }
 
+fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> (Vec<PathBuf>, Vec<String>) {
+    let matches = match walk(Path::new("."), src_ptn) {
+        Err(err) => {
+            eprintln!(
+                "{}: failed to scan directory tree: {}",
+                style_error("error"),
+                err
+            );
+            exit(2);
+        }
+        Ok(matches) => matches,
+    };
+    let destinations: Vec<_> = matches
+        .iter()
+        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
+        .collect();
+    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
+    assert_eq!(sources.len(), destinations.len());
+
+    (sources, destinations)
+}
+
 fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
     // Ensure that no files share a same destination path
     let mut sorted: Vec<_> = destinations.iter().enumerate().collect();
@@ -113,23 +135,7 @@ fn main() {
     let interactive = 0 < matches.occurrences_of("interactive");
 
     // Collect paths of the files to move with their destination
-    let matches = match walk(Path::new("."), src_ptn) {
-        Err(err) => {
-            eprintln!(
-                "{}: failed to scan directory tree: {}",
-                style_error("error"),
-                err
-            );
-            exit(2);
-        }
-        Ok(matches) => matches,
-    };
-    let destinations: Vec<_> = matches
-        .iter()
-        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
-        .collect();
-    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
-    assert_eq!(sources.len(), destinations.len());
+    let (sources, destinations) = matches_to_entries(src_ptn, dest_ptn);
 
     // Validate them
     if let Err(err) = validate(&sources, &destinations) {
@@ -159,6 +165,34 @@ fn main() {
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    mod matches_to_entries {
+        use super::*;
+
+        #[test]
+        fn no_match() {
+            let (sources, destinations) = matches_to_entries("zzzzz", "zzzzz");
+            assert_eq!(sources.len(), 0);
+            assert_eq!(destinations.len(), 0);
+        }
+
+        #[test]
+        fn multiple_matches() {
+            let (sources, destinations) = matches_to_entries("Cargo.*", "Foobar.#1");
+            assert_eq!(sources.len(), 2);
+            assert_eq!(sources[0].file_name().unwrap(), PathBuf::from("Cargo.toml"));
+            assert_eq!(sources[1].file_name().unwrap(), PathBuf::from("Cargo.lock"));
+            assert_eq!(destinations.len(), 2);
+            assert_eq!(
+                PathBuf::from(&destinations[0]).file_name().unwrap(),
+                PathBuf::from("Foobar.toml")
+            );
+            assert_eq!(
+                PathBuf::from(&destinations[1]).file_name().unwrap(),
+                PathBuf::from("Foobar.lock")
+            );
+        }
+    }
 
     #[test]
     fn test_validation_ok() {

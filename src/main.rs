@@ -14,6 +14,15 @@ use fsutil::move_files;
 use plan::substitute_variables;
 use walk::walk;
 
+#[derive(Debug)]
+struct Config {
+    src_ptn: String,
+    dest_ptn: String,
+    dry_run: bool,
+    verbose: bool,
+    interactive: bool,
+}
+
 /// Returns an object which will be rendered as colored string on terminal.
 fn style_error(s: &str) -> ansi_term::ANSIString {
     if atty::is(atty::Stream::Stderr) {
@@ -23,55 +32,7 @@ fn style_error(s: &str) -> ansi_term::ANSIString {
     }
 }
 
-fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> (Vec<PathBuf>, Vec<String>) {
-    let matches = match walk(Path::new("."), src_ptn) {
-        Err(err) => {
-            eprintln!(
-                "{}: failed to scan directory tree: {}",
-                style_error("error"),
-                err
-            );
-            exit(2);
-        }
-        Ok(matches) => matches,
-    };
-    let destinations: Vec<_> = matches
-        .iter()
-        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
-        .collect();
-    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
-    assert_eq!(sources.len(), destinations.len());
-
-    (sources, destinations)
-}
-
-fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
-    // Ensure that no files share a same destination path
-    let mut sorted: Vec<_> = destinations.iter().enumerate().collect();
-    sorted.sort_by(|a, b| a.1.cmp(&b.1));
-    for i in 1..sorted.len() {
-        let p1 = &sorted[i - 1];
-        let p2 = &sorted[i];
-        if p1.1 == p2.1 {
-            return Err(format!(
-                "destination must be different for each file: \
-                 tried to move both \"{}\" and \"{}\" to \"{}\"",
-                sources[p1.0].to_str().unwrap(),
-                sources[p2.0].to_str().unwrap(),
-                destinations[p1.0],
-            ));
-        }
-    }
-
-    Ok(())
-}
-
-fn main() {
-    // Enable colored output
-    #[cfg(windows)]
-    ansi_term::enable_ansi_support().unwrap();
-
-    // Parse arguments
+fn parse_args(args: env::ArgsOs) -> Config {
     let matches = clap::App::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
@@ -127,15 +88,77 @@ fn main() {
                      hoge_test.py  | tests/test_hoge.py",
                 ),
         )
-        .get_matches_from(env::args_os());
-    let src_ptn = matches.value_of("SOURCE").unwrap();
-    let dest_ptn = matches.value_of("DEST").unwrap();
+        .get_matches_from(args);
+
+    let src_ptn = matches.value_of("SOURCE").unwrap().to_owned();
+    let dest_ptn = matches.value_of("DEST").unwrap().to_owned();
     let dry_run = 0 < matches.occurrences_of("dry-run");
     let verbose = 0 < matches.occurrences_of("verbose");
     let interactive = 0 < matches.occurrences_of("interactive");
 
+    Config {
+        src_ptn,
+        dest_ptn,
+        dry_run,
+        verbose,
+        interactive,
+    }
+}
+
+fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> (Vec<PathBuf>, Vec<String>) {
+    let matches = match walk(Path::new("."), src_ptn) {
+        Err(err) => {
+            eprintln!(
+                "{}: failed to scan directory tree: {}",
+                style_error("error"),
+                err
+            );
+            exit(2);
+        }
+        Ok(matches) => matches,
+    };
+    let destinations: Vec<_> = matches
+        .iter()
+        .map(|m| substitute_variables(dest_ptn, &m.matched_parts[..]))
+        .collect();
+    let sources: Vec<_> = matches.iter().map(|m| m.path()).collect();
+    assert_eq!(sources.len(), destinations.len());
+
+    (sources, destinations)
+}
+
+fn validate(sources: &[PathBuf], destinations: &[String]) -> Result<(), String> {
+    // Ensure that no files share a same destination path
+    let mut sorted: Vec<_> = destinations.iter().enumerate().collect();
+    sorted.sort_by(|a, b| a.1.cmp(&b.1));
+    for i in 1..sorted.len() {
+        let p1 = &sorted[i - 1];
+        let p2 = &sorted[i];
+        if p1.1 == p2.1 {
+            return Err(format!(
+                "destination must be different for each file: \
+                 tried to move both \"{}\" and \"{}\" to \"{}\"",
+                sources[p1.0].to_str().unwrap(),
+                sources[p2.0].to_str().unwrap(),
+                destinations[p1.0],
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn main() {
+    // Enable colored output
+    #[cfg(windows)]
+    ansi_term::enable_ansi_support().unwrap();
+
+    // Parse arguments
+    let config = parse_args(env::args_os());
+
     // Collect paths of the files to move with their destination
-    let (sources, destinations) = matches_to_entries(src_ptn, dest_ptn);
+    let (sources, destinations) =
+        matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
 
     // Validate them
     if let Err(err) = validate(&sources, &destinations) {
@@ -147,9 +170,9 @@ fn main() {
     move_files(
         &sources,
         &destinations,
-        dry_run,
-        interactive,
-        verbose,
+        config.dry_run,
+        config.interactive,
+        config.verbose,
         Some(&|src, _dest, err| {
             eprintln!(
                 "{}: failed to copy \"{}\": {}",

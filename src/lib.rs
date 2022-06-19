@@ -54,31 +54,32 @@ pub fn style_error(s: &str) -> ansi_term::ANSIString {
 }
 
 fn parse_args(args: &[OsString]) -> Config {
-    let matches = clap::App::new("pmv")
+    let matches = clap::Command::new("pmv")
         .version(crate_version!())
         .about(crate_description!())
-        .setting(clap::AppSettings::ColorAuto)
-        .setting(clap::AppSettings::ColoredHelp)
         .arg(
-            clap::Arg::with_name("dry-run")
+            clap::Arg::new("dry-run")
                 .short('n')
                 .long("dry-run")
+                .action(clap::builder::ArgAction::SetTrue)
                 .help("Does not move files but just shows what would be done"),
         )
         .arg(
-            clap::Arg::with_name("interactive")
+            clap::Arg::new("interactive")
                 .short('i')
                 .long("interactive")
+                .action(clap::builder::ArgAction::SetTrue)
                 .help("Prompts before moving an each file"),
         )
         .arg(
-            clap::Arg::with_name("verbose")
+            clap::Arg::new("verbose")
                 .short('v')
                 .long("verbose")
+                .action(clap::builder::ArgAction::Count)
                 .help("Writes verbose message"),
         )
         .arg(
-            clap::Arg::with_name("SOURCE")
+            clap::Arg::new("SOURCE")
                 .required(true)
                 .index(1)
                 .help("Source pattern (use --help for details)")
@@ -91,7 +92,7 @@ fn parse_args(args: &[OsString]) -> Config {
                 ),
         )
         .arg(
-            clap::Arg::with_name("DEST")
+            clap::Arg::new("DEST")
                 .required(true)
                 .index(2)
                 .help("Destination pattern (use --help for details)")
@@ -111,15 +112,15 @@ fn parse_args(args: &[OsString]) -> Config {
         )
         .get_matches_from(args);
 
-    let src_ptn = matches.value_of("SOURCE").unwrap().to_owned();
-    let dest_ptn = matches.value_of("DEST").unwrap().to_owned();
-    let dry_run = 0 < matches.occurrences_of("dry-run");
-    let verbose = 0 < matches.occurrences_of("verbose");
-    let interactive = 0 < matches.occurrences_of("interactive");
+    let src_ptn = matches.get_one::<String>("SOURCE").unwrap();
+    let dest_ptn = matches.get_one::<String>("DEST").unwrap();
+    let dry_run = *matches.get_one::<bool>("dry-run").unwrap();
+    let verbose = 0 < *matches.get_one::<u8>("verbose").unwrap(); // limited by clap so it's safe
+    let interactive = *matches.get_one::<bool>("interactive").unwrap();
 
     Config {
-        src_ptn,
-        dest_ptn,
+        src_ptn: src_ptn.to_owned(),
+        dest_ptn: dest_ptn.to_owned(),
         dry_run,
         verbose,
         interactive,

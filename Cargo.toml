@@ -18,4 +18,4 @@ version = "3.2.5"
 features = ["cargo", "color", "deprecated", "wrap_help"]
 
 [dev-dependencies]
-function_name = "0.2.0"
+function_name = "~0.3.0"

@@ -2,8 +2,9 @@ use function_name::named;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use pmv::try_main;
 
@@ -67,6 +68,42 @@ fn dry_run() {
     assert!(path_bb.exists());
     assert_eq!(fs::read_to_string(&path_ba).unwrap(), "AA");
     assert_eq!(fs::read_to_string(&path_bb).unwrap(), "AB");
+}
+
+#[named]
+#[allow(dead_code)]
+#[test]
+fn interactive() {
+    let temp_dir = prepare(function_name!());
+    let path_a = temp_dir.join("A");
+    let path_b = temp_dir.join("B");
+
+    // Prepare files and directories to testing
+    fs::write(&temp_dir.join("A"), "A").unwrap();
+    fs::write(&temp_dir.join("B"), "B").unwrap();
+
+    // Execute pmv
+    let mut command = make_command();
+    let mut proc = command
+        .current_dir(&temp_dir)
+        .arg("--interactive")
+        .arg("A")
+        .arg("B")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .spawn()
+        .expect("Failed to launch pmv (debug build)");
+    let mut stdin = proc.stdin.take().expect("failed to get stdin");
+    std::thread::spawn(move || {
+        stdin.write_all(b"y").expect("failed to write 'y' to stdin");
+    });
+    let output = proc.wait_with_output().expect("wait for child proc failed");
+    assert!(output.status.success());
+
+    // Test the result
+    assert!(!path_a.exists());
+    assert!(path_b.exists());
+    assert_eq!(fs::read_to_string(&path_b).unwrap(), "A");
 }
 
 #[named]

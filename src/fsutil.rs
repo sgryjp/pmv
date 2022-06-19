@@ -9,7 +9,7 @@ pub fn move_files(
     dry_run: bool,
     interactive: bool,
     verbose: bool,
-    on_error: Option<&dyn Fn(&str, &str, &io::Error)>,
+    on_error: Option<&dyn Fn(&Path, &Path, &io::Error)>,
 ) -> i32 {
     let mut num_errors = 0;
 
@@ -32,7 +32,7 @@ pub fn move_files(
                     io::ErrorKind::Other,
                     "overwriting a file with a directory is not allowed",
                 );
-                f(src.to_str().unwrap(), dest, &err);
+                f(src, dest, &err);
             }
             num_errors += 1;
             continue;
@@ -43,16 +43,16 @@ pub fn move_files(
         if dest.is_dir() {
             dest.push(src.file_name().unwrap());
         }
-        let dest = dest.to_str().unwrap();
-        let src = src.to_str().unwrap();
+        let dest_str = dest.to_string_lossy();
+        let src_str = src.to_string_lossy();
 
         line.clear();
-        line.push_str(src);
-        for _ in src.len()..src_max_len {
+        line.push_str(&src_str);
+        for _ in src_str.len()..src_max_len {
             line.push(' ');
         }
         line.push_str(" --> "); //TODO: Wrap line if it's too long
-        line.push_str(dest);
+        line.push_str(&dest_str);
         if dry_run || (verbose && !interactive) {
             println!("{}", line);
         } else if interactive {
@@ -64,7 +64,7 @@ pub fn move_files(
             if nbytes_read == 0 {
                 if let Some(f) = on_error {
                     let err = io::Error::new(io::ErrorKind::Other, "error on reading user input");
-                    f(src, dest, &err);
+                    f(src, dest.as_path(), &err);
                 }
                 num_errors += 1;
                 continue;
@@ -77,9 +77,9 @@ pub fn move_files(
             }
         }
         if !dry_run {
-            if let Err(err) = std::fs::rename(src, dest) {
+            if let Err(err) = std::fs::rename(src, &dest) {
                 if let Some(f) = on_error {
-                    f(src, dest, &err);
+                    f(src, dest.as_path(), &err);
                 }
                 num_errors += 1;
             }
@@ -124,7 +124,7 @@ mod tests {
             for (src, dest) in pairs {
                 let ent = Entry {
                     src: PathBuf::from(mkpathstring(id, src)),
-                    dest: mkpathstring(id, dest),
+                    dest: PathBuf::from(mkpathstring(id, dest)),
                 };
                 entries.push(ent);
             }

@@ -26,21 +26,21 @@ struct Config {
 /// A pair of source and destination in a moving plan.
 pub struct Entry {
     src: PathBuf,
-    dest: String,
+    dest: PathBuf,
 }
 
 impl Entry {
     pub fn from_str(src: &str, dest: &str) -> Entry {
         Entry {
             src: PathBuf::from(src),
-            dest: dest.to_owned(),
+            dest: PathBuf::from(dest),
         }
     }
 }
 
-impl<'a> From<&'a Entry> for (&'a Path, &'a str) {
-    fn from(ent: &'a Entry) -> (&'a Path, &'a str) {
-        (ent.src.as_path(), ent.dest.as_str())
+impl<'a> From<&'a Entry> for (&'a Path, &'a Path) {
+    fn from(ent: &'a Entry) -> (&'a Path, &'a Path) {
+        (ent.src.as_path(), ent.dest.as_path())
     }
 }
 
@@ -142,9 +142,10 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
 
     let mut entries = Vec::new();
     for m in matches {
+        let dest = substitute_variables(dest_ptn, &m.matched_parts[..]);
         let ent = Entry {
             src: m.path(),
-            dest: substitute_variables(dest_ptn, &m.matched_parts[..]),
+            dest: PathBuf::from(dest),
         };
         entries.push(ent);
     }
@@ -164,9 +165,9 @@ fn validate(entries: &[Entry]) -> Result<(), String> {
             return Err(format!(
                 "destination must be different for each file: \
                  tried to move both \"{}\" and \"{}\" to \"{}\"",
-                p1.src.to_str().unwrap(),
-                p2.src.to_str().unwrap(),
-                p1.dest,
+                p1.src.to_string_lossy(),
+                p2.src.to_string_lossy(),
+                p1.dest.to_string_lossy(),
             ));
         }
     }
@@ -196,9 +197,9 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
         config.verbose,
         Some(&|src, _dest, err| {
             eprintln!(
-                "{}: failed to copy \"{}\": {}",
+                "{}: failed to move \"{}\": {}",
                 style_error("error"),
-                src,
+                src.to_string_lossy(),
                 err
             );
         }),

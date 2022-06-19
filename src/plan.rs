@@ -81,7 +81,10 @@ mod tests {
         fn dest_no_vars() {
             let dest = "/foo/bar";
             let substrs = default_substrs();
-            assert_eq!(substitute_variables(dest, &substrs[..]), format!("{}foo{}bar", SEP, SEP));
+            assert_eq!(
+                substitute_variables(dest, &substrs[..]),
+                format!("{}foo{}bar", SEP, SEP)
+            );
         }
 
         #[test]
@@ -240,7 +243,10 @@ mod tests {
                 .iter()
                 .map(|x| String::from(*x))
                 .collect::<Vec<_>>();
-            assert_eq!(substitute_variables(dest, &substrs[..]), format!("foo{}/{}/", SEP, SEP));
+            assert_eq!(
+                substitute_variables(dest, &substrs[..]),
+                format!("foo{}/{}/", SEP, SEP)
+            );
         }
     }
 }

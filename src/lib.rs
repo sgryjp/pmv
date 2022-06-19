@@ -3,7 +3,6 @@ extern crate clap;
 extern crate ansi_term;
 extern crate atty;
 
-use std::env;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::exit;
@@ -62,19 +61,19 @@ fn parse_args(args: &[OsString]) -> Config {
         .setting(clap::AppSettings::ColoredHelp)
         .arg(
             clap::Arg::with_name("dry-run")
-                .short("n")
+                .short('n')
                 .long("dry-run")
                 .help("Does not move files but just shows what would be done"),
         )
         .arg(
             clap::Arg::with_name("interactive")
-                .short("i")
+                .short('i')
                 .long("interactive")
                 .help("Prompts before moving an each file"),
         )
         .arg(
             clap::Arg::with_name("verbose")
-                .short("v")
+                .short('v')
                 .long("verbose")
                 .help("Writes verbose message"),
         )

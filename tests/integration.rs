@@ -82,7 +82,29 @@ fn interactive() {
     fs::write(&temp_dir.join("A"), "A").unwrap();
     fs::write(&temp_dir.join("B"), "B").unwrap();
 
-    // Execute pmv
+    // Execute pmv in interactive mode and enter 'N'
+    let mut command = make_command();
+    let mut proc = command
+        .current_dir(&temp_dir)
+        .arg("--interactive")
+        .arg("A")
+        .arg("B")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .spawn()
+        .expect("Failed to launch pmv (debug build)");
+    let mut stdin = proc.stdin.take().expect("failed to get stdin");
+    std::thread::spawn(move || {
+        stdin.write_all(b"N").expect("failed to write 'N' to stdin");
+    });
+    let output = proc.wait_with_output().expect("wait for child proc failed");
+    assert!(output.status.success());
+    assert!(path_a.exists());
+    assert!(path_b.exists());
+    assert_eq!(fs::read_to_string(&path_a).unwrap(), "A");
+    assert_eq!(fs::read_to_string(&path_b).unwrap(), "B");
+
+    // Execute pmv in interactive mode and enter 'y'
     let mut command = make_command();
     let mut proc = command
         .current_dir(&temp_dir)

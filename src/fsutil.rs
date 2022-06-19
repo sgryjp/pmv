@@ -9,7 +9,7 @@ pub fn move_files(
     dry_run: bool,
     interactive: bool,
     verbose: bool,
-    on_error: Option<&dyn Fn(&str, &str, &io::Error) -> ()>,
+    on_error: Option<&dyn Fn(&str, &str, &io::Error)>,
 ) -> i32 {
     let mut num_errors = 0;
 

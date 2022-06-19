@@ -41,7 +41,7 @@ impl Entry {
 
 impl<'a> From<&'a Entry> for (&'a Path, &'a str) {
     fn from(ent: &'a Entry) -> (&'a Path, &'a str) {
-        (&ent.src.as_path(), &ent.dest.as_str())
+        (ent.src.as_path(), ent.dest.as_str())
     }
 }
 

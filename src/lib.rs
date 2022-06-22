@@ -11,6 +11,7 @@ mod fsutil;
 mod plan;
 mod walk;
 use fsutil::move_files;
+use plan::sort_entries;
 use plan::substitute_variables;
 use walk::walk;
 
@@ -24,6 +25,7 @@ struct Config {
 }
 
 /// A pair of source and destination in a moving plan.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Entry {
     src: PathBuf,
     dest: PathBuf,
@@ -185,6 +187,8 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
 
     // Collect paths of the files to move with their destination
     let entries = matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
+
+    let entries = sort_entries(&entries)?;
 
     // Validate them
     validate(&entries)?;

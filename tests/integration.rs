@@ -71,7 +71,6 @@ fn dry_run() {
 }
 
 #[named]
-#[allow(dead_code)]
 #[test]
 fn interactive() {
     let temp_dir = prepare(function_name!());
@@ -133,10 +132,12 @@ fn interactive() {
 //#[test]
 fn swap_filenames() {
     let temp_dir = prepare(function_name!());
+    let path_ab = temp_dir.join("AB");
+    let path_ba = temp_dir.join("BA");
 
     // Prepare files and directories to testing
-    fs::write(&temp_dir.join("AB"), "AB").unwrap();
-    fs::write(&temp_dir.join("BA"), "BA").unwrap();
+    fs::write(&path_ab, "AB").unwrap();
+    fs::write(&path_ba, "BA").unwrap();
 
     // Execute pmv
     let mut command = make_command();
@@ -150,8 +151,6 @@ fn swap_filenames() {
     assert!(output.status.success());
 
     // Test the result
-    let path_ab = temp_dir.join("AB");
-    let path_ba = temp_dir.join("BA");
     assert!(path_ab.exists());
     assert!(path_ba.exists());
     assert_eq!(fs::read_to_string(&path_ab).unwrap(), "BA");

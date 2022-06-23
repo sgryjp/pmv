@@ -137,19 +137,17 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
                 style_error("error"),
                 err
             );
-            exit(2);
+            exit(2); //TODO: Do not exit here
         }
         Ok(matches) => matches,
     };
 
     let mut entries = Vec::new();
     for m in matches {
+        let src = m.path();
         let dest = substitute_variables(dest_ptn, &m.matched_parts[..]);
-        let ent = Entry {
-            src: m.path(),
-            dest: PathBuf::from(dest),
-        };
-        entries.push(ent);
+        let dest = PathBuf::from(dest);
+        entries.push(Entry { src, dest });
     }
     entries
 }

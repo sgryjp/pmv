@@ -17,6 +17,7 @@ pub struct Match {
 
 impl Match {
     pub fn path(&self) -> PathBuf {
+        //TODO: Should we return a ref?
         self.dir_entry.path()
     }
 }
@@ -179,18 +180,20 @@ mod tests {
             return workdir;
         }
 
+        #[named]
         #[test]
         fn no_specials() {
-            setup("no_specials");
+            setup(function_name!());
             let matches = walk(Path::new("temp/no_specials"), "foo/bar/baz").unwrap();
             assert_eq!(matches.len(), 1);
             assert_eq!(matches[0].path(), Path::new("temp/no_specials/foo/bar/baz"));
             assert_eq!(matches[0].matched_parts, Vec::<String>::new());
         }
 
+        #[named]
         #[test]
         fn question() {
-            setup("question");
+            setup(function_name!());
             let mut matches = walk(Path::new("temp/question"), "ba?/ba?/ba?").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));
@@ -233,9 +236,10 @@ mod tests {
             );
         }
 
+        #[named]
         #[test]
         fn star() {
-            setup("star");
+            setup(function_name!());
             let mut matches = walk(Path::new("temp/star"), "b*/b*/b*").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));

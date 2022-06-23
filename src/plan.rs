@@ -8,7 +8,7 @@ pub fn sort_entries(entries: &[Entry]) -> Result<Vec<Entry>, String> {
     while !entries.is_empty() {
         // Pull a chain starting with the first entry.
         let mut indices = pull_a_chain(&entries)?;
-        debug_assert!(0 < indices.len());
+        debug_assert!(!indices.is_empty());
 
         // Resolve if the end of the chain is the beginnig
         let is_circular = if 2 <= indices.len() {
@@ -53,7 +53,7 @@ pub fn sort_entries(entries: &[Entry]) -> Result<Vec<Entry>, String> {
         }
 
         // Now remove the pulled and copied entries from the source.
-        indices.sort();
+        indices.sort_unstable();
         for i in indices.iter().rev() {
             entries.remove(*i);
         }
@@ -63,20 +63,21 @@ pub fn sort_entries(entries: &[Entry]) -> Result<Vec<Entry>, String> {
 }
 
 fn make_safeish_filename<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
-    //TODO: Make this efficient
-    let path = path.as_ref();
-    if let Some(filename) = path.file_name() {
-        let n: u16 = random();
-        for i in (n..65535).chain(0..n) {
-            let mut new_filename = filename.to_owned();
-            new_filename.push(format!(".pmv{:04x}", i));
-            let new_path = path.with_file_name(new_filename);
-            if new_path.exists() {
-                continue;
-            }
-            return Some(new_path);
+    let orig_path = path.as_ref();
+    let orig_path_str = orig_path.as_os_str();
+
+    // Search for a safe-ish filename with random postfix
+    let n: u16 = random();
+    for i in (n..65535).chain(0..n) {
+        let mut new_path_str = orig_path_str.to_owned();
+        new_path_str.push(format!(".pmv{:04x}", i));
+        let new_path = Path::new(&new_path_str);
+        if !new_path.exists() {
+            return Some(new_path_str.into()); // move
         }
     }
+
+    // No filename was available.
     None
 }
 
@@ -88,7 +89,7 @@ fn pull_a_chain(entries: &[&Entry]) -> Result<Vec<usize>, String> {
     let mut indices: Vec<usize> = vec![];
 
     // If there is nothing to move, we are done.
-    if entries.len() == 0 {
+    if entries.is_empty() {
         return Ok(indices);
     }
 

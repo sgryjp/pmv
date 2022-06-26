@@ -1,36 +1,38 @@
+use crate::Entry;
 use std::cmp;
 use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub fn move_files(
-    sources: &[PathBuf],
-    destinations: &[String],
+    entries: &[Entry],
     dry_run: bool,
     interactive: bool,
     verbose: bool,
-    on_error: Option<&dyn Fn(&str, &str, &io::Error) -> ()>,
+    on_error: Option<&dyn Fn(&Path, &Path, &io::Error)>,
 ) -> i32 {
     let mut num_errors = 0;
 
     // Calculate max width for printing
-    let src_max_len = sources
+    let src_max_len = entries
         .iter()
-        .map(|x| x.to_str().unwrap().len())
+        .map(|ent| ent.src.to_str().unwrap().len())
         .fold(0, cmp::max);
 
     // Move files
     let mut line = String::new();
-    for (src, dest) in sources.iter().zip(destinations.iter()) {
+    for ent in entries {
+        let (src, dest) = ent.into();
+
         // Reject if moving a directory to path where a file exists
         // (Windows accepts this case but Linux does not)
-        if src.is_dir() && Path::new(&dest).is_file() {
+        if src.is_dir() && Path::new(dest).is_file() {
             if let Some(f) = on_error {
                 let err = io::Error::new(
                     io::ErrorKind::Other,
                     "overwriting a file with a directory is not allowed",
                 );
-                f(src.to_str().unwrap(), dest, &err);
+                f(src, dest, &err);
             }
             num_errors += 1;
             continue;
@@ -41,16 +43,16 @@ pub fn move_files(
         if dest.is_dir() {
             dest.push(src.file_name().unwrap());
         }
-        let dest = dest.to_str().unwrap();
-        let src = src.to_str().unwrap();
+        let dest_str = dest.to_string_lossy();
+        let src_str = src.to_string_lossy();
 
         line.clear();
-        line.push_str(src);
-        for _ in src.len()..src_max_len {
+        line.push_str(&src_str);
+        for _ in src_str.len()..src_max_len {
             line.push(' ');
         }
         line.push_str(" --> "); //TODO: Wrap line if it's too long
-        line.push_str(dest);
+        line.push_str(&dest_str);
         if dry_run || (verbose && !interactive) {
             println!("{}", line);
         } else if interactive {
@@ -62,7 +64,7 @@ pub fn move_files(
             if nbytes_read == 0 {
                 if let Some(f) = on_error {
                     let err = io::Error::new(io::ErrorKind::Other, "error on reading user input");
-                    f(src, dest, &err);
+                    f(src, dest.as_path(), &err);
                 }
                 num_errors += 1;
                 continue;
@@ -75,9 +77,9 @@ pub fn move_files(
             }
         }
         if !dry_run {
-            if let Err(err) = std::fs::rename(src, dest) {
+            if let Err(err) = std::fs::rename(src, &dest) {
                 if let Some(f) = on_error {
-                    f(src, dest, &err);
+                    f(src, dest.as_path(), &err);
                 }
                 num_errors += 1;
             }
@@ -117,6 +119,18 @@ mod tests {
             PathBuf::from(&path)
         }
 
+        fn make_entries(id: &str, pairs: Vec<(&str, &str)>) -> Vec<Entry> {
+            let mut entries = Vec::new();
+            for (src, dest) in pairs {
+                let ent = Entry {
+                    src: PathBuf::from(mkpathstring(id, src)),
+                    dest: PathBuf::from(mkpathstring(id, dest)),
+                };
+                entries.push(ent);
+            }
+            entries
+        }
+
         fn mkfile(id: &str, name: &str) -> Result<(), io::Error> {
             let path = mkpathstring(id, name);
             fs::write(Path::new(&path), &path)
@@ -150,9 +164,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = true;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "f2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(mkpathbuf(id, "f1").exists());
@@ -170,9 +183,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "\0")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "\0")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "f1").exists());
@@ -190,9 +202,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "f2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -210,9 +221,8 @@ mod tests {
             mkdir(id, "d1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "d1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "d1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -231,9 +241,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "lf1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -253,9 +262,8 @@ mod tests {
             mklink(id, "d1", "ld1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "f1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("f1", "ld1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -274,9 +282,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "f1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("d1", "f1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").exists());
@@ -294,9 +301,8 @@ mod tests {
             mkdir(id, "d2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "d2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("d1", "d2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -316,9 +322,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("d1", "lf1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").is_dir());
@@ -337,9 +342,8 @@ mod tests {
             mklink(id, "d2", "ld2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "d1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("d1", "ld2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -359,9 +363,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "f2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("lf1", "f2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").is_file());
@@ -381,9 +384,8 @@ mod tests {
             mkdir(id, "d1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "d1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("lf1", "d1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -404,9 +406,8 @@ mod tests {
             mklink(id, "f2", "lf2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "lf2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("lf1", "lf2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -429,9 +430,8 @@ mod tests {
             mklink(id, "d1", "ld1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "lf1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "ld1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("lf1", "ld1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -452,9 +452,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "f1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("ld1", "f1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -474,9 +473,8 @@ mod tests {
             mkdir(id, "d2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "d2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("ld1", "d2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());
@@ -497,9 +495,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "lf1")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("ld1", "lf1")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -519,9 +516,8 @@ mod tests {
             mklink(id, "d2", "ld2").unwrap();
 
             let dry_run = false;
-            let sources: Vec<PathBuf> = vec![mkpathbuf(id, "ld1")];
-            let dests: Vec<String> = vec![mkpathstring(id, "ld2")];
-            let num_errors = move_files(&sources, &dests, dry_run, false, false, None);
+            let entries = make_entries(id, vec![("ld1", "ld2")]);
+            let num_errors = move_files(&entries, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());

@@ -12,10 +12,11 @@ edition = "2018"
 [dependencies]
 ansi_term = "~0.12.1"
 atty = "~0.2"
+rand = "0.8.5"
 
 [dependencies.clap]
-version = "~2.33.0"
-features = [ "color", "wrap_help" ]
+version = "3.2.5"
+features = ["cargo", "color", "deprecated", "wrap_help"]
 
 [dev-dependencies]
-function_name = "0.2.0"
+function_name = "~0.3.0"

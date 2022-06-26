@@ -21,11 +21,6 @@ fn prepare(function_name: &str) -> PathBuf {
     temp_dir
 }
 
-fn make_command() -> Command {
-    let cmd_path = PathBuf::from("./target/debug/pmv").canonicalize().unwrap();
-    Command::new(cmd_path)
-}
-
 #[named]
 #[test]
 fn dry_run() {
@@ -82,9 +77,12 @@ fn interactive() {
     fs::write(&temp_dir.join("B"), "B").unwrap();
 
     // Execute pmv in interactive mode and enter 'N'
-    let mut command = make_command();
+    let mut command = Command::new("cargo");
     let mut proc = command
         .current_dir(&temp_dir)
+        .arg("run")
+        .arg("-q")
+        .arg("--")
         .arg("--interactive")
         .arg("A")
         .arg("B")
@@ -104,9 +102,12 @@ fn interactive() {
     assert_eq!(fs::read_to_string(&path_b).unwrap(), "B");
 
     // Execute pmv in interactive mode and enter 'y'
-    let mut command = make_command();
+    let mut command = Command::new("cargo");
     let mut proc = command
         .current_dir(&temp_dir)
+        .arg("run")
+        .arg("-q")
+        .arg("--")
         .arg("--interactive")
         .arg("A")
         .arg("B")

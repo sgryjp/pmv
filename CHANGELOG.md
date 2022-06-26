@@ -1,6 +1,12 @@
 <!-- markdownlint-disable MD024-->
 # Change Log
 
+## [0.4.2] - 2022-06-26
+
+### Fixed
+
+- CRITICAL: If pmv swaps two files one of them will be lost. ([#20][issue20])
+
 ## [0.4.1] - 2021-03-07
 
 ### Fixed
@@ -20,3 +26,4 @@
 - Disallow to move a directory to path where a file exists
 
 [issue17]: https://github.com/sgryjp/pmv/issues/17
+[issue20]: https://github.com/sgryjp/pmv/issues/20

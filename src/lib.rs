@@ -25,7 +25,7 @@ struct Config {
 }
 
 /// A pair of source and destination in a moving plan.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Entry {
     src: PathBuf,
     dest: PathBuf,
@@ -228,23 +228,24 @@ mod tests {
 
         #[test]
         fn multiple_matches() {
-            let entries = matches_to_entries("Cargo.*", "Foobar.#1");
+            let mut entries = matches_to_entries("Cargo.*", "Foobar.#1");
+            entries.sort();
             assert_eq!(entries.len(), 2);
             assert_eq!(
                 entries[0].src.file_name().unwrap(),
-                PathBuf::from("Cargo.toml")
-            );
-            assert_eq!(
-                entries[1].src.file_name().unwrap(),
                 PathBuf::from("Cargo.lock")
             );
             assert_eq!(
+                entries[1].src.file_name().unwrap(),
+                PathBuf::from("Cargo.toml")
+            );
+            assert_eq!(
                 PathBuf::from(&entries[0].dest).file_name().unwrap(),
-                PathBuf::from("Foobar.toml")
+                PathBuf::from("Foobar.lock")
             );
             assert_eq!(
                 PathBuf::from(&entries[1].dest).file_name().unwrap(),
-                PathBuf::from("Foobar.lock")
+                PathBuf::from("Foobar.toml")
             );
         }
     }

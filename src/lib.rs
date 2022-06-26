@@ -132,7 +132,7 @@ fn parse_args(args: &[OsString]) -> Config {
 fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
     //TODO: Fix for when curdir is not available
     let curdir = std::env::current_dir().unwrap();
-    let matches = match walk(curdir.as_path(), src_ptn) {
+    let matches = match walk(&curdir, src_ptn) {
         Err(err) => {
             eprintln!(
                 "{}: failed to scan directory tree: {}",

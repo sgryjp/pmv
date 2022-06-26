@@ -30,8 +30,8 @@ impl Match {
 ///
 /// Note that this function expects the current directory is available.
 /// In that case, this function fails.
-pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<Match>, String> {
-    //TODO: can we make `dir` AsRef<Path>?
+pub fn walk<P: AsRef<Path>>(dir: P, pattern: &str) -> Result<Vec<Match>, String> {
+    let dir = dir.as_ref();
     if !dir.is_absolute() {
         return Err(format!(
             "needs an absolute directory path: {}",
@@ -196,7 +196,7 @@ mod tests {
 
         #[test]
         fn non_absolute_search_root() {
-            let result = walk(&PathBuf::from("."), "*");
+            let result = walk(".", "*");
             assert!(result.is_err());
             let err = result.err().unwrap();
             assert!(err.contains("needs an absolute directory path"));
@@ -207,7 +207,7 @@ mod tests {
         fn no_specials() {
             setup(function_name!());
             let curdir = std::env::current_dir().unwrap();
-            let matches = walk(&curdir.join("temp/no_specials"), "foo/bar/baz").unwrap();
+            let matches = walk(curdir.join("temp/no_specials"), "foo/bar/baz").unwrap();
             assert_eq!(matches.len(), 1);
             assert_eq!(
                 matches[0].path(),
@@ -221,7 +221,7 @@ mod tests {
         fn question() {
             setup(function_name!());
             let curdir = std::env::current_dir().unwrap();
-            let mut matches = walk(&curdir.join("temp/question"), "ba?/ba?/ba?").unwrap();
+            let mut matches = walk(curdir.join("temp/question"), "ba?/ba?/ba?").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
@@ -268,7 +268,7 @@ mod tests {
         fn star() {
             setup(function_name!());
             let curdir = std::env::current_dir().unwrap();
-            let mut matches = walk(&curdir.join("temp/star"), "b*/b*/b*").unwrap();
+            let mut matches = walk(curdir.join("temp/star"), "b*/b*/b*").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
@@ -318,7 +318,7 @@ mod tests {
             let workdir = new_setup(function_name!(), prereq_dirs, prereq_files);
 
             // pmv should not misrecognize "foo" as a directory
-            walk(workdir.as_path(), "foo/bar").unwrap();
+            walk(workdir, "foo/bar").unwrap();
         }
     }
 }

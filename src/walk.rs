@@ -27,7 +27,18 @@ impl Match {
 /// This function recursively search directory tree for entries matching the
 /// given pattern. While this function walks the directory tree, it remembers
 /// which part of the path corresponds to which wildcard in the pattern.
+///
+/// Note that this function expects the current directory is available.
+/// In that case, this function fails.
 pub fn walk(dir: &Path, pattern: &str) -> Result<Vec<Match>, String> {
+    //TODO: can we make `dir` AsRef<Path>?
+    if !dir.is_absolute() {
+        return Err(format!(
+            "needs an absolute directory path: {}",
+            dir.to_string_lossy()
+        ));
+    }
+
     let mut matches: Vec<Match> = Vec::new();
     let mut matched_parts: Vec<String> = Vec::new();
     let patterns: Vec<Component> = Path::new(pattern).components().collect();
@@ -149,8 +160,9 @@ mod tests {
         use super::*;
 
         fn setup(id: &str) {
-            let _ = fs::create_dir(Path::new("temp"));
-            let _ = fs::remove_dir_all(Path::new(&format!("temp/{}", id)));
+            let curdir = std::env::current_dir().unwrap();
+            let _ = fs::create_dir(curdir.join("temp"));
+            let _ = fs::remove_dir_all(curdir.join(&format!("temp/{}", id)));
             for dir1 in ["foo", "bar", "baz"].iter() {
                 for dir2 in ["foo", "bar", "baz"].iter() {
                     let _ =
@@ -165,7 +177,9 @@ mod tests {
 
         fn new_setup(id: &str, prereq_dirs: Vec<&str>, prereq_files: Vec<&str>) -> PathBuf {
             // Prepare working directory
-            let workdir = Path::join(Path::new("temp"), id);
+            let mut workdir = std::env::current_dir().unwrap();
+            workdir.push("temp");
+            workdir.push(id);
             let _ = fs::remove_dir_all(workdir.as_path());
             fs::create_dir_all(workdir.as_path()).unwrap();
 
@@ -180,13 +194,25 @@ mod tests {
             return workdir;
         }
 
+        #[test]
+        fn non_absolute_search_root() {
+            let result = walk(&PathBuf::from("."), "*");
+            assert!(result.is_err());
+            let err = result.err().unwrap();
+            assert!(err.contains("needs an absolute directory path"));
+        }
+
         #[named]
         #[test]
         fn no_specials() {
             setup(function_name!());
-            let matches = walk(Path::new("temp/no_specials"), "foo/bar/baz").unwrap();
+            let curdir = std::env::current_dir().unwrap();
+            let matches = walk(&curdir.join("temp/no_specials"), "foo/bar/baz").unwrap();
             assert_eq!(matches.len(), 1);
-            assert_eq!(matches[0].path(), Path::new("temp/no_specials/foo/bar/baz"));
+            assert_eq!(
+                matches[0].path(),
+                curdir.join("temp/no_specials/foo/bar/baz")
+            );
             assert_eq!(matches[0].matched_parts, Vec::<String>::new());
         }
 
@@ -194,7 +220,8 @@ mod tests {
         #[test]
         fn question() {
             setup(function_name!());
-            let mut matches = walk(Path::new("temp/question"), "ba?/ba?/ba?").unwrap();
+            let curdir = std::env::current_dir().unwrap();
+            let mut matches = walk(&curdir.join("temp/question"), "ba?/ba?/ba?").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
@@ -202,14 +229,14 @@ mod tests {
             assert_eq!(
                 paths,
                 vec![
-                    Path::new("temp/question/bar/bar/bar"),
-                    Path::new("temp/question/bar/bar/baz"),
-                    Path::new("temp/question/bar/baz/bar"),
-                    Path::new("temp/question/bar/baz/baz"),
-                    Path::new("temp/question/baz/bar/bar"),
-                    Path::new("temp/question/baz/bar/baz"),
-                    Path::new("temp/question/baz/baz/bar"),
-                    Path::new("temp/question/baz/baz/baz"),
+                    curdir.join("temp/question/bar/bar/bar"),
+                    curdir.join("temp/question/bar/bar/baz"),
+                    curdir.join("temp/question/bar/baz/bar"),
+                    curdir.join("temp/question/bar/baz/baz"),
+                    curdir.join("temp/question/baz/bar/bar"),
+                    curdir.join("temp/question/baz/bar/baz"),
+                    curdir.join("temp/question/baz/baz/bar"),
+                    curdir.join("temp/question/baz/baz/baz"),
                 ]
             );
 
@@ -240,7 +267,8 @@ mod tests {
         #[test]
         fn star() {
             setup(function_name!());
-            let mut matches = walk(Path::new("temp/star"), "b*/b*/b*").unwrap();
+            let curdir = std::env::current_dir().unwrap();
+            let mut matches = walk(&curdir.join("temp/star"), "b*/b*/b*").unwrap();
             assert_eq!(matches.len(), 8);
             matches.sort_by(|a, b| a.path().cmp(&b.path()));
 
@@ -248,14 +276,14 @@ mod tests {
             assert_eq!(
                 paths,
                 vec![
-                    Path::new("temp/star/bar/bar/bar"),
-                    Path::new("temp/star/bar/bar/baz"),
-                    Path::new("temp/star/bar/baz/bar"),
-                    Path::new("temp/star/bar/baz/baz"),
-                    Path::new("temp/star/baz/bar/bar"),
-                    Path::new("temp/star/baz/bar/baz"),
-                    Path::new("temp/star/baz/baz/bar"),
-                    Path::new("temp/star/baz/baz/baz"),
+                    curdir.join("temp/star/bar/bar/bar"),
+                    curdir.join("temp/star/bar/bar/baz"),
+                    curdir.join("temp/star/bar/baz/bar"),
+                    curdir.join("temp/star/bar/baz/baz"),
+                    curdir.join("temp/star/baz/bar/bar"),
+                    curdir.join("temp/star/baz/bar/baz"),
+                    curdir.join("temp/star/baz/baz/bar"),
+                    curdir.join("temp/star/baz/baz/baz"),
                 ]
             );
 

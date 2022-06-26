@@ -130,7 +130,9 @@ fn parse_args(args: &[OsString]) -> Config {
 }
 
 fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
-    let matches = match walk(Path::new("."), src_ptn) {
+    //TODO: Fix for when curdir is not available
+    let curdir = std::env::current_dir().unwrap();
+    let matches = match walk(curdir.as_path(), src_ptn) {
         Err(err) => {
             eprintln!(
                 "{}: failed to scan directory tree: {}",
@@ -146,7 +148,7 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
     for m in matches {
         let src = m.path();
         let dest = substitute_variables(dest_ptn, &m.matched_parts[..]);
-        let dest = PathBuf::from(dest);
+        let dest = curdir.join(dest);
         entries.push(Entry { src, dest });
     }
     entries

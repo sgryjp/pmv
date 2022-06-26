@@ -111,6 +111,9 @@ fn pull_a_chain(entries: &[&Entry]) -> Result<Vec<usize>, String> {
 
         // Find an entry which can be chained. (e.g.: B→C after A→B)
         for (i, entry) in entries.iter().enumerate().skip(1) {
+            debug_assert!(entry.src.is_absolute());
+            debug_assert!(entry.dest.is_absolute());
+
             // Skip if this entry cannot be as such.
             let curr = entries[*indices.last().unwrap()];
             if entry.src != curr.dest {
@@ -180,6 +183,18 @@ pub fn substitute_variables(dest: &str, substrings: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn to_absolute(entries: Vec<Entry>) -> Vec<Entry> {
+        let curdir = std::env::current_dir().unwrap();
+        entries
+            .iter()
+            .map(|entry| {
+                let src = curdir.join(&entry.src);
+                let dest = curdir.join(&entry.dest);
+                Entry { src, dest }
+            })
+            .collect()
+    }
 
     mod substitute_variables {
         use super::*;
@@ -405,7 +420,7 @@ mod tests {
 
         #[test]
         fn single() {
-            let entries = vec![Entry::from_str("A", "B")];
+            let entries = to_absolute(vec![Entry::from_str("A", "B")]);
             let entries: Vec<&Entry> = entries.iter().collect();
             let indices = pull_a_chain(&entries);
             assert!(indices.is_ok());
@@ -416,11 +431,11 @@ mod tests {
 
         #[test]
         fn chained() {
-            let entries = vec![
+            let entries = to_absolute(vec![
                 Entry::from_str("A", "B"),
                 Entry::from_str("C", "X"),
                 Entry::from_str("B", "C"),
-            ];
+            ]);
             let entries: Vec<&Entry> = entries.iter().collect();
             let indices = pull_a_chain(&entries);
             assert!(indices.is_ok());
@@ -430,11 +445,11 @@ mod tests {
 
         #[test]
         fn circular() {
-            let entries = vec![
+            let entries = to_absolute(vec![
                 Entry::from_str("A", "B"),
                 Entry::from_str("C", "A"),
                 Entry::from_str("B", "C"),
-            ];
+            ]);
             let entries: Vec<&Entry> = entries.iter().collect();
             let indices = pull_a_chain(&entries);
             assert!(indices.is_ok());
@@ -444,26 +459,32 @@ mod tests {
 
         #[test]
         fn shared_src_1st() {
-            let entries = vec![Entry::from_str("A", "B"), Entry::from_str("A", "C")];
+            let entries = to_absolute(vec![Entry::from_str("A", "B"), Entry::from_str("A", "C")]);
             let entries: Vec<&Entry> = entries.iter().collect();
             let indices = pull_a_chain(&entries);
             assert!(indices.is_err());
             let msg = indices.unwrap_err();
-            assert!(msg.contains("'A' to 'B' and 'C'"));
+            assert!(msg.contains("cannot move a file to mutliple destinations"));
+            assert!(msg.contains("A' to"));
+            assert!(msg.contains("B' and"));
+            assert!(msg.ends_with("C'"));
         }
 
         #[test]
         fn shared_src_2nd() {
-            let entries = vec![
+            let entries = to_absolute(vec![
                 Entry::from_str("A", "B"),
                 Entry::from_str("B", "C"),
                 Entry::from_str("B", "D"),
-            ];
+            ]);
             let entries: Vec<&Entry> = entries.iter().collect();
             let indices = pull_a_chain(&entries);
             assert!(indices.is_err());
             let msg = indices.unwrap_err();
-            assert!(msg.contains("'B' to 'C' and 'D'"));
+            assert!(msg.contains("cannot move a file to mutliple destinations"));
+            assert!(msg.contains("B' to"));
+            assert!(msg.contains("C' and"));
+            assert!(msg.ends_with("D'"));
         }
     }
 
@@ -479,46 +500,46 @@ mod tests {
 
         #[test]
         fn single() {
-            let entries = vec![Entry::from_str("A", "B")];
+            let entries = to_absolute(vec![Entry::from_str("A", "B")]);
             let sorted = sort_entries(&entries).unwrap();
-            assert_eq!(sorted, vec![Entry::from_str("A", "B")]);
+            assert_eq!(sorted, to_absolute(vec![Entry::from_str("A", "B")]));
         }
 
         #[test]
         fn chained() {
-            let entries = vec![
+            let entries = to_absolute(vec![
                 Entry::from_str("A", "B"),
                 Entry::from_str("C", "X"),
                 Entry::from_str("B", "C"),
-            ];
+            ]);
             let sorted = sort_entries(&entries).unwrap();
             assert_eq!(
                 sorted,
-                vec![
+                to_absolute(vec![
                     Entry::from_str("C", "X"),
                     Entry::from_str("B", "C"),
                     Entry::from_str("A", "B"),
-                ]
+                ])
             );
         }
 
         #[test]
         fn circular() {
-            let entries = vec![
+            let entries = to_absolute(vec![
                 Entry::from_str("A", "B"),
                 Entry::from_str("C", "A"),
                 Entry::from_str("B", "C"),
-            ];
+            ]);
             let sorted = sort_entries(&entries).unwrap();
             let tmp = sorted[0].dest.to_str().unwrap();
             assert_eq!(
                 sorted,
-                vec![
+                to_absolute(vec![
                     Entry::from_str("C", tmp),
                     Entry::from_str("B", "C"),
                     Entry::from_str("A", "B"),
                     Entry::from_str(tmp, "A"),
-                ]
+                ])
             );
         }
     }

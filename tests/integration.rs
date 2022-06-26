@@ -128,8 +128,7 @@ fn interactive() {
 }
 
 #[named]
-#[allow(dead_code)]
-//#[test]
+#[test]
 fn swap_filenames() {
     let temp_dir = prepare(function_name!());
     let path_ab = temp_dir.join("AB");
@@ -140,15 +139,17 @@ fn swap_filenames() {
     fs::write(&path_ba, "BA").unwrap();
 
     // Execute pmv
-    let mut command = make_command();
-    let output = command
-        .current_dir(&temp_dir)
-        .arg("-v")
-        .arg("??")
-        .arg("#2#1")
-        .output()
-        .expect("Failed to launch pmv (debug build)");
-    assert!(output.status.success());
+    let mut args: Vec<OsString> = vec![
+        PathBuf::from("-v"),
+        temp_dir.join("??"),
+        temp_dir.join("#2#1"),
+    ]
+    .iter()
+    .map(OsString::from)
+    .collect();
+    args.insert(0, env::args_os().next().unwrap());
+    let result = try_main(&args);
+    assert!(result.is_ok());
 
     // Test the result
     assert!(path_ab.exists());

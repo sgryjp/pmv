@@ -536,5 +536,61 @@ mod tests {
                 ])
             );
         }
+
+        #[test]
+        fn shared_src_1st() {
+            let entries = to_absolute(vec![Action::new("A", "B"), Action::new("A", "C")]);
+            let indices = sort_actions(&entries);
+            assert!(indices.is_err());
+            let msg = indices.unwrap_err();
+            assert!(msg.contains("cannot move a file to mutliple destinations"));
+            assert!(msg.contains("A' to"));
+            assert!(msg.contains("B' and"));
+            assert!(msg.ends_with("C'"));
+        }
+
+        #[test]
+        fn shared_src_2nd() {
+            let entries = to_absolute(vec![
+                Action::new("A", "B"),
+                Action::new("B", "C"),
+                Action::new("B", "D"),
+            ]);
+            let indices = sort_actions(&entries);
+            assert!(indices.is_err());
+            let msg = indices.unwrap_err();
+            assert!(msg.contains("cannot move a file to mutliple destinations"));
+            assert!(msg.contains("B' to"));
+            assert!(msg.contains("C' and"));
+            assert!(msg.ends_with("D'"));
+        }
+
+        #[allow(dead_code)] // #[test]
+        fn shared_dest_1st() {
+            let entries = to_absolute(vec![Action::new("A", "C"), Action::new("B", "C")]);
+            let indices = sort_actions(&entries);
+            assert!(indices.is_err());
+            // let msg = indices.unwrap_err();
+            // assert!(msg.contains("cannot move multiple files into a same location"));
+            // assert!(msg.contains("A' and"));
+            // assert!(msg.contains("B' to"));
+            // assert!(msg.ends_with("C'"));
+        }
+
+        #[allow(dead_code)] // #[test]
+        fn shared_dest_2nd() {
+            let entries = to_absolute(vec![
+                Action::new("A", "B"),
+                Action::new("B", "D"),
+                Action::new("C", "D"),
+            ]);
+            let indices = sort_actions(&entries);
+            assert!(indices.is_err());
+            // let msg = indices.unwrap_err();
+            // assert!(msg.contains("cannot move multiple files into a same location"));
+            // assert!(msg.contains("B' and"));
+            // assert!(msg.contains("C' to"));
+            // assert!(msg.ends_with("D'"));
+        }
     }
 }

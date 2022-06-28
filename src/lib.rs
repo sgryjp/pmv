@@ -124,7 +124,7 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
         let src = m.path();
         let dest = substitute_variables(dest_ptn, &m.matched_parts[..]);
         let dest = curdir.join(dest);
-        actions.push(Action { src, dest });
+        actions.push(Action::new(src, dest));
     }
     actions
 }
@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_validation_ok() {
-        let actions = vec![Action::from_str("src/foo.rs", "src/foo")];
+        let actions = vec![Action::new("src/foo.rs", "src/foo")];
         let result = validate(&actions);
         result.unwrap();
     }
@@ -235,8 +235,8 @@ mod tests {
     #[test]
     fn test_validation_duplicated_dest() {
         let actions = vec![
-            Action::from_str("src/foo.rs", "src/foo.rs"),
-            Action::from_str("src/bar.rs", "src/foo.rs"),
+            Action::new("src/foo.rs", "src/foo.rs"),
+            Action::new("src/bar.rs", "src/foo.rs"),
         ];
         let result = validate(&actions);
         let err = result.unwrap_err();

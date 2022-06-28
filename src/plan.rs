@@ -35,17 +35,11 @@ pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
                     ))
                 }
             };
-            sorted.push(Action {
-                src: last.src.clone(),
-                dest: tmp.clone(),
-            });
+            sorted.push(Action::new(last.src.clone(), tmp.clone()));
             for i in indices.iter().rev().skip(1) {
                 sorted.push(actions[*i].clone());
             }
-            sorted.push(Action {
-                src: tmp, // move
-                dest: first.src.clone(),
-            });
+            sorted.push(Action::new(tmp, first.src.clone()));// moving "tmp"
         } else {
             for i in indices.iter().rev() {
                 sorted.push(actions[*i].clone());
@@ -195,7 +189,7 @@ mod tests {
             .map(|action| {
                 let src = curdir.join(&action.src);
                 let dest = curdir.join(&action.dest);
-                Action { src, dest }
+                Action::new(src, dest)
             })
             .collect()
     }
@@ -424,7 +418,7 @@ mod tests {
 
         #[test]
         fn single() {
-            let actions = to_absolute(vec![Action::from_str("A", "B")]);
+            let actions = to_absolute(vec![Action::new("A", "B")]);
             let actions: Vec<&Action> = actions.iter().collect();
             let indices = pull_a_chain(&actions);
             assert!(indices.is_ok());
@@ -436,9 +430,9 @@ mod tests {
         #[test]
         fn chained() {
             let actions = to_absolute(vec![
-                Action::from_str("A", "B"),
-                Action::from_str("C", "X"),
-                Action::from_str("B", "C"),
+                Action::new("A", "B"),
+                Action::new("C", "X"),
+                Action::new("B", "C"),
             ]);
             let actions: Vec<&Action> = actions.iter().collect();
             let indices = pull_a_chain(&actions);
@@ -450,9 +444,9 @@ mod tests {
         #[test]
         fn circular() {
             let actions = to_absolute(vec![
-                Action::from_str("A", "B"),
-                Action::from_str("C", "A"),
-                Action::from_str("B", "C"),
+                Action::new("A", "B"),
+                Action::new("C", "A"),
+                Action::new("B", "C"),
             ]);
             let actions: Vec<&Action> = actions.iter().collect();
             let indices = pull_a_chain(&actions);
@@ -463,7 +457,7 @@ mod tests {
 
         #[test]
         fn shared_src_1st() {
-            let actions = to_absolute(vec![Action::from_str("A", "B"), Action::from_str("A", "C")]);
+            let actions = to_absolute(vec![Action::new("A", "B"), Action::new("A", "C")]);
             let actions: Vec<&Action> = actions.iter().collect();
             let indices = pull_a_chain(&actions);
             assert!(indices.is_err());
@@ -477,9 +471,9 @@ mod tests {
         #[test]
         fn shared_src_2nd() {
             let actions = to_absolute(vec![
-                Action::from_str("A", "B"),
-                Action::from_str("B", "C"),
-                Action::from_str("B", "D"),
+                Action::new("A", "B"),
+                Action::new("B", "C"),
+                Action::new("B", "D"),
             ]);
             let actions: Vec<&Action> = actions.iter().collect();
             let indices = pull_a_chain(&actions);
@@ -504,25 +498,25 @@ mod tests {
 
         #[test]
         fn single() {
-            let actions = to_absolute(vec![Action::from_str("A", "B")]);
+            let actions = to_absolute(vec![Action::new("A", "B")]);
             let sorted = sort_actions(&actions).unwrap();
-            assert_eq!(sorted, to_absolute(vec![Action::from_str("A", "B")]));
+            assert_eq!(sorted, to_absolute(vec![Action::new("A", "B")]));
         }
 
         #[test]
         fn chained() {
             let actions = to_absolute(vec![
-                Action::from_str("A", "B"),
-                Action::from_str("C", "X"),
-                Action::from_str("B", "C"),
+                Action::new("A", "B"),
+                Action::new("C", "X"),
+                Action::new("B", "C"),
             ]);
             let sorted = sort_actions(&actions).unwrap();
             assert_eq!(
                 sorted,
                 to_absolute(vec![
-                    Action::from_str("C", "X"),
-                    Action::from_str("B", "C"),
-                    Action::from_str("A", "B"),
+                    Action::new("C", "X"),
+                    Action::new("B", "C"),
+                    Action::new("A", "B"),
                 ])
             );
         }
@@ -530,19 +524,19 @@ mod tests {
         #[test]
         fn circular() {
             let actions = to_absolute(vec![
-                Action::from_str("A", "B"),
-                Action::from_str("C", "A"),
-                Action::from_str("B", "C"),
+                Action::new("A", "B"),
+                Action::new("C", "A"),
+                Action::new("B", "C"),
             ]);
             let sorted = sort_actions(&actions).unwrap();
             let tmp = sorted[0].dest.to_str().unwrap();
             assert_eq!(
                 sorted,
                 to_absolute(vec![
-                    Action::from_str("C", tmp),
-                    Action::from_str("B", "C"),
-                    Action::from_str("A", "B"),
-                    Action::from_str(tmp, "A"),
+                    Action::new("C", tmp),
+                    Action::new("B", "C"),
+                    Action::new("A", "B"),
+                    Action::new(tmp, "A"),
                 ])
             );
         }

@@ -8,10 +8,10 @@ pub struct Action {
 }
 
 impl Action {
-    pub fn from_str(src: &str, dest: &str) -> Action {
+    pub fn new<P1: Into<PathBuf>, P2: Into<PathBuf>>(src: P1, dest: P2) -> Action {
         Action {
-            src: PathBuf::from(src),
-            dest: PathBuf::from(dest),
+            src: src.into(),
+            dest: dest.into(),
         }
     }
 }

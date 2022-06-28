@@ -121,10 +121,7 @@ mod tests {
         fn make_actions(id: &str, pairs: Vec<(&str, &str)>) -> Vec<Action> {
             let mut actions = Vec::new();
             for (src, dest) in pairs {
-                let action = Action {
-                    src: PathBuf::from(mkpathstring(id, src)),
-                    dest: PathBuf::from(mkpathstring(id, dest)),
-                };
+                let action = Action::new(mkpathstring(id, src), mkpathstring(id, dest));
                 actions.push(action);
             }
             actions

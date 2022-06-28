@@ -1,11 +1,11 @@
-use crate::Entry;
+use crate::Action;
 use std::cmp;
 use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub fn move_files(
-    entries: &[Entry],
+    actions: &[Action],
     dry_run: bool,
     interactive: bool,
     verbose: bool,
@@ -14,15 +14,15 @@ pub fn move_files(
     let mut num_errors = 0;
 
     // Calculate max width for printing
-    let src_max_len = entries
+    let src_max_len = actions
         .iter()
-        .map(|ent| ent.src.to_str().unwrap().len())
+        .map(|action| action.src.to_str().unwrap().len())
         .fold(0, cmp::max);
 
     // Move files
     let mut line = String::new();
-    for ent in entries {
-        let (src, dest) = ent.into();
+    for action in actions {
+        let (src, dest) = action.into();
 
         // Reject if moving a directory to path where a file exists
         // (Windows accepts this case but Linux does not)
@@ -119,16 +119,16 @@ mod tests {
             PathBuf::from(&path)
         }
 
-        fn make_entries(id: &str, pairs: Vec<(&str, &str)>) -> Vec<Entry> {
-            let mut entries = Vec::new();
+        fn make_actions(id: &str, pairs: Vec<(&str, &str)>) -> Vec<Action> {
+            let mut actions = Vec::new();
             for (src, dest) in pairs {
-                let ent = Entry {
+                let action = Action {
                     src: PathBuf::from(mkpathstring(id, src)),
                     dest: PathBuf::from(mkpathstring(id, dest)),
                 };
-                entries.push(ent);
+                actions.push(action);
             }
-            entries
+            actions
         }
 
         fn mkfile(id: &str, name: &str) -> Result<(), io::Error> {
@@ -164,8 +164,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = true;
-            let entries = make_entries(id, vec![("f1", "f2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "f2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(mkpathbuf(id, "f1").exists());
@@ -183,8 +183,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("f1", "\0")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "\0")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "f1").exists());
@@ -202,8 +202,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("f1", "f2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "f2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -221,8 +221,8 @@ mod tests {
             mkdir(id, "d1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("f1", "d1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "d1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -241,8 +241,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("f1", "lf1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "lf1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -262,8 +262,8 @@ mod tests {
             mklink(id, "d1", "ld1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("f1", "ld1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("f1", "ld1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "f1").exists());
@@ -282,8 +282,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("d1", "f1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("d1", "f1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").exists());
@@ -301,8 +301,8 @@ mod tests {
             mkdir(id, "d2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("d1", "d2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("d1", "d2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -322,8 +322,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("d1", "lf1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("d1", "lf1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "d1").is_dir());
@@ -342,8 +342,8 @@ mod tests {
             mklink(id, "d2", "ld2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("d1", "ld2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("d1", "ld2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "d1").exists());
@@ -363,8 +363,8 @@ mod tests {
             mkfile(id, "f2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("lf1", "f2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("lf1", "f2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").is_file());
@@ -384,8 +384,8 @@ mod tests {
             mkdir(id, "d1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("lf1", "d1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("lf1", "d1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -406,8 +406,8 @@ mod tests {
             mklink(id, "f2", "lf2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("lf1", "lf2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("lf1", "lf2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -430,8 +430,8 @@ mod tests {
             mklink(id, "d1", "ld1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("lf1", "ld1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("lf1", "ld1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "lf1").exists());
@@ -452,8 +452,8 @@ mod tests {
             mkfile(id, "f1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("ld1", "f1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("ld1", "f1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -473,8 +473,8 @@ mod tests {
             mkdir(id, "d2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("ld1", "d2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("ld1", "d2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());
@@ -495,8 +495,8 @@ mod tests {
             mklink(id, "f1", "lf1").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("ld1", "lf1")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("ld1", "lf1")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 1);
             assert!(mkpathbuf(id, "ld1").exists());
@@ -516,8 +516,8 @@ mod tests {
             mklink(id, "d2", "ld2").unwrap();
 
             let dry_run = false;
-            let entries = make_entries(id, vec![("ld1", "ld2")]);
-            let num_errors = move_files(&entries, dry_run, false, false, None);
+            let actions = make_actions(id, vec![("ld1", "ld2")]);
+            let num_errors = move_files(&actions, dry_run, false, false, None);
 
             assert_eq!(num_errors, 0);
             assert!(!mkpathbuf(id, "ld1").exists());

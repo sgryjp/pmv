@@ -1,13 +1,13 @@
 use std::ffi::OsString;
 use std::process::exit;
 
-mod entry;
+mod action;
 mod fsutil;
 mod plan;
 mod walk;
-use entry::Entry;
+use action::Action;
 use fsutil::move_files;
-use plan::sort_entries;
+use plan::sort_actions;
 use plan::substitute_variables;
 use walk::walk;
 
@@ -103,7 +103,7 @@ fn parse_args(args: &[OsString]) -> Config {
     }
 }
 
-fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
+fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
     //TODO: Fix for when curdir is not available
     let curdir = std::env::current_dir().unwrap();
     let matches = match walk(&curdir, src_ptn) {
@@ -118,25 +118,25 @@ fn matches_to_entries(src_ptn: &str, dest_ptn: &str) -> Vec<Entry> {
         Ok(matches) => matches,
     };
 
-    let mut entries = Vec::new();
+    let mut actions = Vec::new();
     for m in matches {
         let src = m.path();
         let dest = substitute_variables(dest_ptn, &m.matched_parts[..]);
         let dest = curdir.join(dest);
-        entries.push(Entry { src, dest });
+        actions.push(Action { src, dest });
     }
-    entries
+    actions
 }
 
-fn validate(entries: &[Entry]) -> Result<(), String> {
-    // Make reference version of the entries
-    let mut entries: Vec<&Entry> = entries.iter().collect();
+fn validate(actions: &[Action]) -> Result<(), String> {
+    // Make reference version of the actions
+    let mut actions: Vec<&Action> = actions.iter().collect();
 
     // Ensure that no files share a same destination path
-    entries.sort_by(|a, b| a.dest.cmp(&b.dest));
-    for i in 1..entries.len() {
-        let p1 = entries[i - 1];
-        let p2 = entries[i];
+    actions.sort_by(|a, b| a.dest.cmp(&b.dest));
+    for i in 1..actions.len() {
+        let p1 = actions[i - 1];
+        let p2 = actions[i];
         if p1.dest == p2.dest {
             return Err(format!(
                 "destination must be different for each file: \
@@ -160,16 +160,16 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
     let config = parse_args(args);
 
     // Collect paths of the files to move with their destination
-    let entries = matches_to_entries(config.src_ptn.as_str(), config.dest_ptn.as_str());
+    let actions = matches_to_actions(config.src_ptn.as_str(), config.dest_ptn.as_str());
 
-    let entries = sort_entries(&entries)?;
+    let actions = sort_actions(&actions)?;
 
     // Validate them
-    validate(&entries)?;
+    validate(&actions)?;
 
     // Move files
     move_files(
-        &entries,
+        &actions,
         config.dry_run,
         config.interactive,
         config.verbose,
@@ -191,34 +191,34 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    mod matches_to_entries {
+    mod matches_to_actions {
         use super::*;
 
         #[test]
         fn no_match() {
-            let entries = matches_to_entries("zzzzz", "zzzzz");
-            assert_eq!(entries.len(), 0);
+            let actions = matches_to_actions("zzzzz", "zzzzz");
+            assert_eq!(actions.len(), 0);
         }
 
         #[test]
         fn multiple_matches() {
-            let mut entries = matches_to_entries("Cargo.*", "Foobar.#1");
-            entries.sort();
-            assert_eq!(entries.len(), 2);
+            let mut actions = matches_to_actions("Cargo.*", "Foobar.#1");
+            actions.sort();
+            assert_eq!(actions.len(), 2);
             assert_eq!(
-                entries[0].src.file_name().unwrap(),
+                actions[0].src.file_name().unwrap(),
                 PathBuf::from("Cargo.lock")
             );
             assert_eq!(
-                entries[1].src.file_name().unwrap(),
+                actions[1].src.file_name().unwrap(),
                 PathBuf::from("Cargo.toml")
             );
             assert_eq!(
-                PathBuf::from(&entries[0].dest).file_name().unwrap(),
+                PathBuf::from(&actions[0].dest).file_name().unwrap(),
                 PathBuf::from("Foobar.lock")
             );
             assert_eq!(
-                PathBuf::from(&entries[1].dest).file_name().unwrap(),
+                PathBuf::from(&actions[1].dest).file_name().unwrap(),
                 PathBuf::from("Foobar.toml")
             );
         }
@@ -226,18 +226,18 @@ mod tests {
 
     #[test]
     fn test_validation_ok() {
-        let entries = vec![Entry::from_str("src/foo.rs", "src/foo")];
-        let result = validate(&entries);
+        let actions = vec![Action::from_str("src/foo.rs", "src/foo")];
+        let result = validate(&actions);
         result.unwrap();
     }
 
     #[test]
     fn test_validation_duplicated_dest() {
-        let entries = vec![
-            Entry::from_str("src/foo.rs", "src/foo.rs"),
-            Entry::from_str("src/bar.rs", "src/foo.rs"),
+        let actions = vec![
+            Action::from_str("src/foo.rs", "src/foo.rs"),
+            Action::from_str("src/bar.rs", "src/foo.rs"),
         ];
-        let result = validate(&entries);
+        let result = validate(&actions);
         let err = result.unwrap_err();
         assert!(err.contains("destination must be different for each file"));
         assert!(err.contains("src/foo.rs"));

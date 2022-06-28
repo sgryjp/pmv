@@ -134,17 +134,17 @@ fn validate(actions: &[Action]) -> Result<(), String> {
     let mut actions: Vec<&Action> = actions.iter().collect();
 
     // Ensure that no files share a same destination path
-    actions.sort_by(|a, b| a.dest.cmp(&b.dest));
+    actions.sort_by(|a, b| a.dest().cmp(b.dest()));
     for i in 1..actions.len() {
         let p1 = actions[i - 1];
         let p2 = actions[i];
-        if p1.dest == p2.dest {
+        if p1.dest() == p2.dest() {
             return Err(format!(
                 "destination must be different for each file: \
                  tried to move both \"{}\" and \"{}\" to \"{}\"",
                 p1.src().to_string_lossy(),
                 p2.src().to_string_lossy(),
-                p1.dest.to_string_lossy(),
+                p1.dest().to_string_lossy(),
             ));
         }
     }
@@ -215,11 +215,11 @@ mod tests {
                 PathBuf::from("Cargo.toml")
             );
             assert_eq!(
-                PathBuf::from(&actions[0].dest).file_name().unwrap(),
+                PathBuf::from(actions[0].dest()).file_name().unwrap(),
                 PathBuf::from("Foobar.lock")
             );
             assert_eq!(
-                PathBuf::from(&actions[1].dest).file_name().unwrap(),
+                PathBuf::from(actions[1].dest()).file_name().unwrap(),
                 PathBuf::from("Foobar.toml")
             );
         }

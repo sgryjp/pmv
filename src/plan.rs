@@ -14,7 +14,7 @@ pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
         let is_circular = if 2 <= indices.len() {
             let first = actions[indices[0]];
             let last = actions[*indices.last().unwrap()];
-            first.src() == last.dest
+            first.src() == last.dest()
         } else {
             false
         };
@@ -98,8 +98,8 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
         return Err(format!(
             "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
             _head.src().to_string_lossy(),
-            _head.dest.to_string_lossy(),
-            a.dest.to_string_lossy()
+            _head.dest().to_string_lossy(),
+            a.dest().to_string_lossy()
         ));
     }
     indices.push(0);
@@ -110,21 +110,21 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
         // Find an action which can be chained. (e.g.: B→C after A→B)
         for (i, action) in actions.iter().enumerate().skip(1) {
             debug_assert!(action.src().is_absolute());
-            debug_assert!(action.dest.is_absolute());
+            debug_assert!(action.dest().is_absolute());
 
             // Skip if this action cannot be as such.
             let curr = actions[*indices.last().unwrap()];
-            if action.src() != curr.dest {
+            if action.src() != curr.dest() {
                 continue;
             }
 
             // Fail if the src was shared with other actions.
-            if let Some(a) = actions.iter().skip(i + 1).find(|a| a.src() == curr.dest) {
+            if let Some(a) = actions.iter().skip(i + 1).find(|a| a.src() == curr.dest()) {
                 return Err(format!(
                     "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
                     action.src().to_string_lossy(),
-                    action.dest.to_string_lossy(),
-                    a.dest.to_string_lossy(),
+                    action.dest().to_string_lossy(),
+                    a.dest().to_string_lossy(),
                 ));
             }
 
@@ -186,7 +186,7 @@ mod tests {
         let curdir = std::env::current_dir().unwrap();
         actions
             .iter()
-            .map(|a| Action::new(curdir.join(&a.src()), curdir.join(&a.dest)))
+            .map(|a| Action::new(curdir.join(a.src()), curdir.join(a.dest())))
             .collect()
     }
 
@@ -525,7 +525,7 @@ mod tests {
                 Action::new("B", "C"),
             ]);
             let sorted = sort_actions(&actions).unwrap();
-            let tmp = sorted[0].dest.to_str().unwrap();
+            let tmp = sorted[0].dest().to_str().unwrap();
             assert_eq!(
                 sorted,
                 to_absolute(vec![

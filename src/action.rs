@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Action {
     src: PathBuf,
-    pub dest: PathBuf,
+    dest: PathBuf,
 }
 
 impl Action {
@@ -17,6 +17,10 @@ impl Action {
 
     pub fn src(self: &Action) -> &Path {
         self.src.as_path()
+    }
+
+    pub fn dest(self: &Action) -> &Path {
+        self.dest.as_path()
     }
 }
 

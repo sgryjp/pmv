@@ -1,8 +1,3 @@
-#[macro_use]
-extern crate clap;
-extern crate ansi_term;
-extern crate atty;
-
 use std::ffi::OsString;
 use std::process::exit;
 
@@ -36,8 +31,8 @@ pub fn style_error(s: &str) -> ansi_term::ANSIString {
 
 fn parse_args(args: &[OsString]) -> Config {
     let matches = clap::Command::new("pmv")
-        .version(crate_version!())
-        .about(crate_description!())
+        .version(clap::crate_version!())
+        .about(clap::crate_description!())
         .arg(
             clap::Arg::new("dry-run")
                 .short('n')

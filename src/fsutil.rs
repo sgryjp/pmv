@@ -15,7 +15,7 @@ pub fn move_files(
     // Calculate max width for printing
     let src_max_len = actions
         .iter()
-        .map(|action| action.src().to_str().unwrap().len())
+        .map(|a| a.src().to_string_lossy().len())
         .fold(0, cmp::max);
 
     // Move files

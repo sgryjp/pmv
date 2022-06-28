@@ -142,8 +142,8 @@ fn validate(actions: &[Action]) -> Result<(), String> {
             return Err(format!(
                 "destination must be different for each file: \
                  tried to move both \"{}\" and \"{}\" to \"{}\"",
-                p1.src.to_string_lossy(),
-                p2.src.to_string_lossy(),
+                p1.src().to_string_lossy(),
+                p2.src().to_string_lossy(),
                 p1.dest.to_string_lossy(),
             ));
         }
@@ -207,11 +207,11 @@ mod tests {
             actions.sort();
             assert_eq!(actions.len(), 2);
             assert_eq!(
-                actions[0].src.file_name().unwrap(),
+                actions[0].src().file_name().unwrap(),
                 PathBuf::from("Cargo.lock")
             );
             assert_eq!(
-                actions[1].src.file_name().unwrap(),
+                actions[1].src().file_name().unwrap(),
                 PathBuf::from("Cargo.toml")
             );
             assert_eq!(

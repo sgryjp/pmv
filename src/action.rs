@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 /// A pair of source and destination in a moving plan.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Action {
-    pub src: PathBuf,
+    src: PathBuf,
     pub dest: PathBuf,
 }
 
@@ -13,6 +13,10 @@ impl Action {
             src: src.into(),
             dest: dest.into(),
         }
+    }
+
+    pub fn src(self: &Action) -> &Path {
+        self.src.as_path()
     }
 }
 

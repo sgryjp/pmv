@@ -14,7 +14,7 @@ pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
         let is_circular = if 2 <= indices.len() {
             let first = actions[indices[0]];
             let last = actions[*indices.last().unwrap()];
-            first.src == last.dest
+            first.src() == last.dest
         } else {
             false
         };
@@ -26,20 +26,20 @@ pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
             // To do that, firstly we resolve a temporary backup file name.
             let first = actions[indices[0]];
             let last = actions[*indices.last().unwrap()];
-            let tmp = match make_safeish_filename(&first.src) {
+            let tmp = match make_safeish_filename(first.src()) {
                 Some(path) => path,
                 None => {
                     return Err(format!(
                         "temporary filename unavailable for {}",
-                        first.src.to_string_lossy()
+                        first.src().to_string_lossy()
                     ))
                 }
             };
-            sorted.push(Action::new(last.src.clone(), tmp.clone()));
+            sorted.push(Action::new(last.src(), tmp.clone()));
             for i in indices.iter().rev().skip(1) {
                 sorted.push(actions[*i].clone());
             }
-            sorted.push(Action::new(tmp, first.src.clone()));// moving "tmp"
+            sorted.push(Action::new(tmp, first.src())); // moving "tmp"
         } else {
             for i in indices.iter().rev() {
                 sorted.push(actions[*i].clone());
@@ -93,11 +93,11 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
 
     // Remember the first action for later
     let _head = &actions[0];
-    if let Some(a) = actions.iter().skip(1).find(|a| a.src == _head.src) {
+    if let Some(a) = actions.iter().skip(1).find(|a| a.src() == _head.src()) {
         // Fail if there is another action of which src is the same
         return Err(format!(
             "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
-            _head.src.to_string_lossy(),
+            _head.src().to_string_lossy(),
             _head.dest.to_string_lossy(),
             a.dest.to_string_lossy()
         ));
@@ -109,20 +109,20 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
 
         // Find an action which can be chained. (e.g.: B→C after A→B)
         for (i, action) in actions.iter().enumerate().skip(1) {
-            debug_assert!(action.src.is_absolute());
+            debug_assert!(action.src().is_absolute());
             debug_assert!(action.dest.is_absolute());
 
             // Skip if this action cannot be as such.
             let curr = actions[*indices.last().unwrap()];
-            if action.src != curr.dest {
+            if action.src() != curr.dest {
                 continue;
             }
 
             // Fail if the src was shared with other actions.
-            if let Some(a) = actions.iter().skip(i + 1).find(|a| a.src == curr.dest) {
+            if let Some(a) = actions.iter().skip(i + 1).find(|a| a.src() == curr.dest) {
                 return Err(format!(
                     "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
-                    action.src.to_string_lossy(),
+                    action.src().to_string_lossy(),
                     action.dest.to_string_lossy(),
                     a.dest.to_string_lossy(),
                 ));
@@ -186,11 +186,7 @@ mod tests {
         let curdir = std::env::current_dir().unwrap();
         actions
             .iter()
-            .map(|action| {
-                let src = curdir.join(&action.src);
-                let dest = curdir.join(&action.dest);
-                Action::new(src, dest)
-            })
+            .map(|a| Action::new(curdir.join(&a.src()), curdir.join(&a.dest)))
             .collect()
     }
 

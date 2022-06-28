@@ -10,7 +10,7 @@ A command line tool to move multiple files at once, using wildcard patterns.
 
 - Accepts wildcard patterns for selecting files to move
 - Colorized terminal output
-- Runs on Windows and Linux (may run on macOS too?)
+- Runs on Windows, Linux and macOS
 
 ## Usage
 

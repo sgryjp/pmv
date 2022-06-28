@@ -1,7 +1,6 @@
 use crate::Action;
 use std::cmp;
-use std::io;
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 pub fn move_files(

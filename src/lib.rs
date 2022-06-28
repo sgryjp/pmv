@@ -1,14 +1,15 @@
-use std::ffi::OsString;
-use std::process::exit;
-
 mod action;
+mod fnmatch;
 mod fsutil;
 mod plan;
 mod walk;
+
 use action::Action;
 use fsutil::move_files;
 use plan::sort_actions;
 use plan::substitute_variables;
+use std::ffi::OsString;
+use std::process::exit;
 use walk::walk;
 
 #[derive(Debug)]

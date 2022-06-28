@@ -1,10 +1,6 @@
-use std::{
-    fs::{self, DirEntry},
-    path::{Component, Path, PathBuf, MAIN_SEPARATOR},
-};
-
-mod fnmatch;
-use fnmatch::fnmatch;
+use crate::fnmatch::fnmatch;
+use std::fs::{self, DirEntry};
+use std::path::{Component, Path, PathBuf, MAIN_SEPARATOR};
 
 /// A directory entry found in a walk paired with pattern matched substrings.
 ///

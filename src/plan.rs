@@ -62,6 +62,10 @@ pub fn sort_entries(entries: &[Entry]) -> Result<Vec<Entry>, String> {
     Ok(sorted)
 }
 
+/// Makes a safe-ish filename which does not conflict with no other files.
+///
+/// This function is basically UNSAFE as it checks for an pre-existing files without creating a
+/// file.
 fn make_safeish_filename<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
     let orig_path = path.as_ref();
     let orig_path_str = orig_path.as_os_str();

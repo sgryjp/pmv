@@ -1,10 +1,39 @@
 use crate::Action;
 use rand::random;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 
+/// Sorts actions in safe order.
+///
+/// This function fails if no safe order was not found.
 pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
     let mut actions: Vec<&Action> = actions.iter().collect();
     let mut sorted: Vec<Action> = Vec::new();
+
+    // Fail if any pair of actions share a source or a destination.
+    // (that means executing them results data loss)
+    let mut src_paths = HashSet::new();
+    let mut dest_paths = HashSet::new();
+    for action in &actions {
+        let first_entry = src_paths.insert(action.src());
+        if !first_entry {
+            let msg = format!(
+                "cannot move a file to multiple destinations: '{}'",
+                action.src().to_string_lossy()
+            );
+            return Err(msg);
+        }
+
+        let first_entry = dest_paths.insert(action.dest());
+        if !first_entry {
+            let msg = format!(
+                "cannot move multiple files to a same location: '{}'",
+                action.dest().to_string_lossy()
+            );
+            return Err(msg);
+        }
+    }
+
     while !actions.is_empty() {
         // Pull a chain starting with the first actions.
         let mut indices = pull_a_chain(&actions)?;
@@ -81,8 +110,8 @@ fn make_safeish_filename<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
 
 /// Enumerates a chain of moving actions which must be done in reversed order.
 ///
-/// This function does not detect circular network so the caller must take care of that case.
-/// If two or more actions share a src, this function fails.
+/// This function does not detect circular network nor duplicates of sources and/or destinations.
+/// Caller must handle these cases appropriately.
 fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
     let mut indices: Vec<usize> = vec![];
 
@@ -91,19 +120,7 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
         return Ok(indices);
     }
 
-    // Remember the first action for later
-    let _head = &actions[0];
-    if let Some(a) = actions.iter().skip(1).find(|a| a.src() == _head.src()) {
-        // Fail if there is another action of which src is the same
-        return Err(format!(
-            "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
-            _head.src().to_string_lossy(),
-            _head.dest().to_string_lossy(),
-            a.dest().to_string_lossy()
-        ));
-    }
     indices.push(0);
-
     loop {
         let prev_indices_len = indices.len();
 
@@ -116,16 +133,6 @@ fn pull_a_chain(actions: &[&Action]) -> Result<Vec<usize>, String> {
             let curr = actions[*indices.last().unwrap()];
             if action.src() != curr.dest() {
                 continue;
-            }
-
-            // Fail if the src was shared with other actions.
-            if let Some(a) = actions.iter().skip(i + 1).find(|a| a.src() == curr.dest()) {
-                return Err(format!(
-                    "cannot move a file to mutliple destinations: '{}' to '{}' and '{}'",
-                    action.src().to_string_lossy(),
-                    action.dest().to_string_lossy(),
-                    a.dest().to_string_lossy(),
-                ));
             }
 
             // Remember this as a following action.
@@ -450,36 +457,6 @@ mod tests {
             let indices = indices.unwrap();
             assert_eq!(indices, vec![0, 2, 1]);
         }
-
-        #[test]
-        fn shared_src_1st() {
-            let actions = to_absolute(vec![Action::new("A", "B"), Action::new("A", "C")]);
-            let actions: Vec<&Action> = actions.iter().collect();
-            let indices = pull_a_chain(&actions);
-            assert!(indices.is_err());
-            let msg = indices.unwrap_err();
-            assert!(msg.contains("cannot move a file to mutliple destinations"));
-            assert!(msg.contains("A' to"));
-            assert!(msg.contains("B' and"));
-            assert!(msg.ends_with("C'"));
-        }
-
-        #[test]
-        fn shared_src_2nd() {
-            let actions = to_absolute(vec![
-                Action::new("A", "B"),
-                Action::new("B", "C"),
-                Action::new("B", "D"),
-            ]);
-            let actions: Vec<&Action> = actions.iter().collect();
-            let indices = pull_a_chain(&actions);
-            assert!(indices.is_err());
-            let msg = indices.unwrap_err();
-            assert!(msg.contains("cannot move a file to mutliple destinations"));
-            assert!(msg.contains("B' to"));
-            assert!(msg.contains("C' and"));
-            assert!(msg.ends_with("D'"));
-        }
     }
 
     mod sort_actions {
@@ -538,59 +515,23 @@ mod tests {
         }
 
         #[test]
-        fn shared_src_1st() {
+        fn shared_src() {
             let entries = to_absolute(vec![Action::new("A", "B"), Action::new("A", "C")]);
             let indices = sort_actions(&entries);
             assert!(indices.is_err());
             let msg = indices.unwrap_err();
-            assert!(msg.contains("cannot move a file to mutliple destinations"));
-            assert!(msg.contains("A' to"));
-            assert!(msg.contains("B' and"));
-            assert!(msg.ends_with("C'"));
+            assert!(msg.contains("cannot move a file to multiple destinations"));
+            assert!(msg.contains("A'"));
         }
 
         #[test]
-        fn shared_src_2nd() {
-            let entries = to_absolute(vec![
-                Action::new("A", "B"),
-                Action::new("B", "C"),
-                Action::new("B", "D"),
-            ]);
-            let indices = sort_actions(&entries);
-            assert!(indices.is_err());
-            let msg = indices.unwrap_err();
-            assert!(msg.contains("cannot move a file to mutliple destinations"));
-            assert!(msg.contains("B' to"));
-            assert!(msg.contains("C' and"));
-            assert!(msg.ends_with("D'"));
-        }
-
-        #[allow(dead_code)] // #[test]
-        fn shared_dest_1st() {
+        fn shared_dest() {
             let entries = to_absolute(vec![Action::new("A", "C"), Action::new("B", "C")]);
             let indices = sort_actions(&entries);
             assert!(indices.is_err());
-            // let msg = indices.unwrap_err();
-            // assert!(msg.contains("cannot move multiple files into a same location"));
-            // assert!(msg.contains("A' and"));
-            // assert!(msg.contains("B' to"));
-            // assert!(msg.ends_with("C'"));
-        }
-
-        #[allow(dead_code)] // #[test]
-        fn shared_dest_2nd() {
-            let entries = to_absolute(vec![
-                Action::new("A", "B"),
-                Action::new("B", "D"),
-                Action::new("C", "D"),
-            ]);
-            let indices = sort_actions(&entries);
-            assert!(indices.is_err());
-            // let msg = indices.unwrap_err();
-            // assert!(msg.contains("cannot move multiple files into a same location"));
-            // assert!(msg.contains("B' and"));
-            // assert!(msg.contains("C' to"));
-            // assert!(msg.ends_with("D'"));
+            let msg = indices.unwrap_err();
+            assert!(msg.contains("cannot move multiple files to a same location"));
+            assert!(msg.contains("C'"));
         }
     }
 }

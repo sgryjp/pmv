@@ -71,6 +71,11 @@ cargo install pmv
 
 Rust 1.36.0 or newer is required to build `pmv`.
 
+## License
+
+pmv is licensed under the [Apache License version 2.0](LICENSE-APACHE) or the
+[MIT license](LICENSE-MIT), at your option.
+
 ## References
 
 - [mmv](https://ss64.com/bash/mmv.html)

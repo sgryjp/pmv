@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD024-->
 # Change Log
 
+## [Unreleased]
+
+### Changed
+
+- Now pmv can be licensed under the Apache License version 2.0, or under the MIT
+  license as before.
+
 ## [0.4.2] - 2022-06-26
 
 ### Fixed

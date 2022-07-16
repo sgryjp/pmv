@@ -129,29 +129,6 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
     actions
 }
 
-fn validate(actions: &[Action]) -> Result<(), String> {
-    // Make reference version of the actions
-    let mut actions: Vec<&Action> = actions.iter().collect();
-
-    // Ensure that no files share a same destination path
-    actions.sort_by(|a, b| a.dest().cmp(b.dest()));
-    for i in 1..actions.len() {
-        let p1 = actions[i - 1];
-        let p2 = actions[i];
-        if p1.dest() == p2.dest() {
-            return Err(format!(
-                "destination must be different for each file: \
-                 tried to move both \"{}\" and \"{}\" to \"{}\"",
-                p1.src().to_string_lossy(),
-                p2.src().to_string_lossy(),
-                p1.dest().to_string_lossy(),
-            ));
-        }
-    }
-
-    Ok(())
-}
-
 pub fn try_main(args: &[OsString]) -> Result<(), String> {
     // Enable colored output
     #[cfg(windows)]
@@ -164,9 +141,6 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
     let actions = matches_to_actions(config.src_ptn.as_str(), config.dest_ptn.as_str());
 
     let actions = sort_actions(&actions)?;
-
-    // Validate them
-    validate(&actions)?;
 
     // Move files
     move_files(
@@ -223,24 +197,5 @@ mod tests {
                 PathBuf::from("Foobar.toml")
             );
         }
-    }
-
-    #[test]
-    fn test_validation_ok() {
-        let actions = vec![Action::new("src/foo.rs", "src/foo")];
-        let result = validate(&actions);
-        result.unwrap();
-    }
-
-    #[test]
-    fn test_validation_duplicated_dest() {
-        let actions = vec![
-            Action::new("src/foo.rs", "src/foo.rs"),
-            Action::new("src/bar.rs", "src/foo.rs"),
-        ];
-        let result = validate(&actions);
-        let err = result.unwrap_err();
-        assert!(err.contains("destination must be different for each file"));
-        assert!(err.contains("src/foo.rs"));
     }
 }

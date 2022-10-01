@@ -21,13 +21,15 @@ struct Config {
     interactive: bool,
 }
 
-/// Returns an object which will be rendered as colored string on terminal.
-pub fn style_error(s: &str) -> ansi_term::ANSIString {
-    if atty::is(atty::Stream::Stderr) {
-        ansi_term::Color::Red.bold().paint(s)
+/// Prints an error message.
+pub fn print_error<S: AsRef<str>>(msg: S) {
+    let s = msg.as_ref();
+    let error_tag = if atty::is(atty::Stream::Stderr) {
+        ansi_term::Color::Red.bold().paint("error")
     } else {
-        ansi_term::ANSIGenericString::from(s) // LCOV_EXCL_LINE
-    }
+        ansi_term::ANSIGenericString::from("error") // LCOV_EXCL_LINE
+    };
+    eprintln!("{error_tag}: {s}");
 }
 
 fn parse_args(args: &[OsString]) -> Config {
@@ -109,11 +111,7 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
     let curdir = std::env::current_dir().unwrap();
     let matches = match walk(&curdir, src_ptn) {
         Err(err) => {
-            eprintln!(
-                "{}: failed to scan directory tree: {}",
-                style_error("error"),
-                err
-            );
+            print_error(format!("failed to scan directory tree: {}", err));
             exit(2); //TODO: Do not exit here
         }
         Ok(matches) => matches,
@@ -149,12 +147,11 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
         config.interactive,
         config.verbose,
         Some(&|src, _dest, err| {
-            eprintln!(
-                "{}: failed to move \"{}\": {}",
-                style_error("error"),
+            print_error(format!(
+                "failed to move \"{}\": {}",
                 src.to_string_lossy(),
                 err
-            );
+            ));
         }),
     );
 

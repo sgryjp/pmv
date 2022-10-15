@@ -135,10 +135,6 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
 }
 
 pub fn try_main(args: &[OsString]) -> Result<(), String> {
-    // Enable colored output
-    #[cfg(windows)]
-    ansi_term::enable_ansi_support().unwrap();
-
     // Parse arguments
     let config = parse_args(args);
 

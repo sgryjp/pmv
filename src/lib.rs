@@ -9,7 +9,9 @@ use fsutil::move_files;
 use plan::sort_actions;
 use plan::substitute_variables;
 use std::ffi::OsString;
+use std::io::{self, Write};
 use std::process::exit;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use walk::walk;
 
 #[derive(Debug)]
@@ -23,13 +25,18 @@ struct Config {
 
 /// Prints an error message.
 pub fn print_error<S: AsRef<str>>(msg: S) {
-    let s = msg.as_ref();
-    let error_tag = if atty::is(atty::Stream::Stderr) {
-        ansi_term::Color::Red.bold().paint("error")
-    } else {
-        ansi_term::ANSIGenericString::from("error") // LCOV_EXCL_LINE
-    };
-    eprintln!("{error_tag}: {s}");
+    fn do_print(msg: &str) -> Result<(), io::Error> {
+        let mut stdout = StandardStream::stderr(ColorChoice::Auto);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red)))?;
+        write!(&mut stdout, "error")?;
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)))?;
+        writeln!(&mut stdout, ": {}", msg)
+    }
+
+    let msg = msg.as_ref();
+    if let Err(_) = do_print(msg) {
+        eprintln!("error: {}", msg);
+    }
 }
 
 fn parse_args(args: &[OsString]) -> Config {

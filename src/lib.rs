@@ -9,7 +9,9 @@ use fsutil::move_files;
 use plan::sort_actions;
 use plan::substitute_variables;
 use std::ffi::OsString;
+use std::io::{self, Write};
 use std::process::exit;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use walk::walk;
 
 #[derive(Debug)]
@@ -21,12 +23,19 @@ struct Config {
     interactive: bool,
 }
 
-/// Returns an object which will be rendered as colored string on terminal.
-pub fn style_error(s: &str) -> ansi_term::ANSIString {
-    if atty::is(atty::Stream::Stderr) {
-        ansi_term::Color::Red.bold().paint(s)
-    } else {
-        ansi_term::ANSIGenericString::from(s) // LCOV_EXCL_LINE
+/// Prints an error message.
+pub fn print_error<S: AsRef<str>>(msg: S) {
+    fn do_print(msg: &str) -> Result<(), io::Error> {
+        let mut stdout = StandardStream::stderr(ColorChoice::Auto);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red)))?;
+        write!(&mut stdout, "error")?;
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)))?;
+        writeln!(&mut stdout, ": {}", msg)
+    }
+
+    let msg = msg.as_ref();
+    if let Err(_) = do_print(msg) {
+        eprintln!("error: {}", msg);
     }
 }
 
@@ -109,11 +118,7 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
     let curdir = std::env::current_dir().unwrap();
     let matches = match walk(&curdir, src_ptn) {
         Err(err) => {
-            eprintln!(
-                "{}: failed to scan directory tree: {}",
-                style_error("error"),
-                err
-            );
+            print_error(format!("failed to scan directory tree: {}", err));
             exit(2); //TODO: Do not exit here
         }
         Ok(matches) => matches,
@@ -130,10 +135,6 @@ fn matches_to_actions(src_ptn: &str, dest_ptn: &str) -> Vec<Action> {
 }
 
 pub fn try_main(args: &[OsString]) -> Result<(), String> {
-    // Enable colored output
-    #[cfg(windows)]
-    ansi_term::enable_ansi_support().unwrap();
-
     // Parse arguments
     let config = parse_args(args);
 
@@ -149,12 +150,11 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
         config.interactive,
         config.verbose,
         Some(&|src, _dest, err| {
-            eprintln!(
-                "{}: failed to move \"{}\": {}",
-                style_error("error"),
+            print_error(format!(
+                "failed to move \"{}\": {}",
                 src.to_string_lossy(),
                 err
-            );
+            ));
         }),
     );
 

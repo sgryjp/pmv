@@ -1,7 +1,8 @@
 <!-- markdownlint-disable MD024-->
+
 # Change Log
 
-## [Unreleased]
+## [0.4.3] - 2023-11-18
 
 ### Changed
 
@@ -18,7 +19,7 @@
 
 ### Fixed
 
-- pmv could try to list children of *a file* and fail ([#17][issue17])
+- pmv could try to list children of _a file_ and fail ([#17][issue17])
 
 ## [0.4.0] - 2020-01-18
 

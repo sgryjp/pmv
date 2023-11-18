@@ -34,7 +34,7 @@ pub fn print_error<S: AsRef<str>>(msg: S) {
     }
 
     let msg = msg.as_ref();
-    if let Err(_) = do_print(msg) {
+    if do_print(msg).is_err() {
         eprintln!("error: {}", msg);
     }
 }
@@ -139,7 +139,7 @@ pub fn try_main(args: &[OsString]) -> Result<(), String> {
     let config = parse_args(args);
 
     // Collect paths of the files to move with their destination
-    let actions = matches_to_actions(config.src_ptn.as_str(), config.dest_ptn.as_str());
+    let actions = matches_to_actions(&config.src_ptn, &config.dest_ptn);
 
     let actions = sort_actions(&actions)?;
 

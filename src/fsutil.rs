@@ -3,12 +3,14 @@ use std::cmp;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
+pub type Callback = dyn Fn(&Path, &Path, &io::Error);
+
 pub fn move_files(
     actions: &[Action],
     dry_run: bool,
     interactive: bool,
     verbose: bool,
-    on_error: Option<&dyn Fn(&Path, &Path, &io::Error)>,
+    on_error: Option<&Callback>,
 ) -> i32 {
     let mut num_errors = 0;
 

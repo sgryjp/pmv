@@ -1,0 +1,6 @@
+fnmatch
+strcspn
+strspn
+Suguru
+termcolor
+Yamamoto

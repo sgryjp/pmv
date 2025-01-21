@@ -10,13 +10,13 @@ categories = ["command-line-utilities", "filesystem"]
 edition = "2021"
 
 [dependencies]
-atty = "~0.2"
+atty = "0.2.14"
 rand = "0.8.5"
-termcolor = "1.1"
+termcolor = "1.4.1"
 
 [dependencies.clap]
-version = "3.2.5"
+version = "4.5.27"
 features = ["cargo", "color", "deprecated", "wrap_help"]
 
 [dev-dependencies]
-function_name = "~0.3.0"
+function_name = "0.3.0"

@@ -37,7 +37,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup OS packages (Linux)
       if: startsWith(matrix.os, 'ubuntu')
@@ -46,7 +46,7 @@ jobs:
         sudo apt-get install -y build-essential gcc-multilib
 
     - name: Setup Rust toolchain
-      uses: actions-rs/toolchain@v1
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
         target: ${{ matrix.target }}
@@ -68,14 +68,14 @@ jobs:
 
     - name: Upload built artifact (Linux, mac)
       if: ${{ !startsWith(matrix.os, 'windows') }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: pmv-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/pmv
 
     - name: Upload built artifact (Windows)
       if: startsWith(matrix.os, 'windows')
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: pmv-${{ matrix.target }}
         path: target\${{ matrix.target }}\release\pmv.exe

@@ -7,7 +7,7 @@ repository = "https://github.com/sgryjp/pmv"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["command-line-utilities", "filesystem"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 atty = "~0.2"

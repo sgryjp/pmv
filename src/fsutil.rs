@@ -73,7 +73,7 @@ pub fn move_files(
 
             // Skip if the input was not "y"
             let line = line.trim();
-            if line.to_ascii_lowercase() != "y" {
+            if !line.eq_ignore_ascii_case("y") {
                 continue;
             }
         }

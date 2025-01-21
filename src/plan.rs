@@ -39,7 +39,7 @@ pub fn sort_actions(actions: &[Action]) -> Result<Vec<Action>, String> {
         let mut indices = pull_a_chain(&actions)?;
         debug_assert!(!indices.is_empty());
 
-        // Resolve if the end of the chain is the beginnig
+        // Resolve if the end of the chain is the beginning
         let is_circular = if 2 <= indices.len() {
             let first = actions[indices[0]];
             let last = actions[*indices.last().unwrap()];
@@ -190,10 +190,10 @@ mod tests {
     use super::*;
 
     fn to_absolute(actions: Vec<Action>) -> Vec<Action> {
-        let curdir = std::env::current_dir().unwrap();
+        let cwd = std::env::current_dir().unwrap();
         actions
             .iter()
-            .map(|a| Action::new(curdir.join(a.src()), curdir.join(a.dest())))
+            .map(|a| Action::new(cwd.join(a.src()), cwd.join(a.dest())))
             .collect()
     }
 
@@ -463,7 +463,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn emtpy() {
+        fn empty() {
             let actions: Vec<Action> = vec![];
             let sorted = sort_actions(&actions).unwrap();
             assert_eq!(sorted.len(), 0);

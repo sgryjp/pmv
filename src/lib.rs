@@ -89,7 +89,7 @@ fn parse_args(args: &[OsString]) -> Config {
                      the wildcard patterns in SOURCE; `#1` matches the first wildcard, `#2` \
                      matches the second, respectively. For example, if SOURCE is `*_test.py` and \
                      DEST is `tests/test_#1.py`:\n\n    \
-                     Exisitng File | Destination\n    \
+                     Existing File | Destination\n    \
                      ------------- | -----------------\n    \
                      foo_test.py   | tests/test_foo.py\n    \
                      bar_test.py   | tests/test_bar.py\n    \

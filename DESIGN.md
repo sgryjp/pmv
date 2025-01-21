@@ -45,7 +45,7 @@ file to multiple destination (and `pmv` is not a _copy command_). In case of
 overwritten. `pmv` must detect there cases before executing move actions. In
 case of (b-1), depending on the execution order a source a move action will be
 lost (in the example above list, B will be lost if the execution order is A→B
-then B→C). Lastly in case of (b-2), the same problem as (b-1) ocurres. Note that
+then B→C). Lastly in case of (b-2), the same problem as (b-1) occurs. Note that
 unlike (b-1), we cannot resolve a "safe order" for (b-2).
 
 ### The algorithm to execute them safely

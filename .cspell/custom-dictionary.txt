@@ -1,6 +1,8 @@
 fnmatch
 fsutil
 hoge
+msvc
+multilib
 safeish
 strcspn
 strspn

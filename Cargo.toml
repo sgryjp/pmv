@@ -10,7 +10,6 @@ categories = ["command-line-utilities", "filesystem"]
 edition = "2021"
 
 [dependencies]
-atty = "0.2.14"
 rand = "0.8.5"
 termcolor = "1.4.1"
 

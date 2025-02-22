@@ -7,6 +7,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      Rust dependencies:
+        update-types: [patch]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     # Check for updates every Monday

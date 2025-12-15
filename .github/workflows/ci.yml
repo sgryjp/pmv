@@ -68,14 +68,14 @@ jobs:
 
     - name: Upload built artifact (Linux, mac)
       if: ${{ !startsWith(matrix.os, 'windows') }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pmv-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/pmv
 
     - name: Upload built artifact (Windows)
       if: startsWith(matrix.os, 'windows')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pmv-${{ matrix.target }}
         path: target\${{ matrix.target }}\release\pmv.exe
